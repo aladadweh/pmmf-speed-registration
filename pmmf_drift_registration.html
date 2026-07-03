@@ -388,7 +388,9 @@ function step3(){
     <div class="card-head"><div class="card-num">03</div><div><h3>بيانات السيارة</h3><span>معلومات السيارة المشاركة في السباق</span></div></div>
     <div class="card-body">
       <div class="grid">
-        <div class="field" id="f_carModel"><label><span class="req">*</span>نوع وموديل السيارة</label><input type="text" id="carModel" placeholder="مثال: Ford Mustang 2020"><div class="err">مطلوب</div></div>
+        <div class="field" id="f_carMake"><label><span class="req">*</span>الشركة المصنعة</label><input type="text" id="carMake" placeholder="مثال: Ford"><div class="err">مطلوب</div></div>
+        <div class="field" id="f_carModel"><label><span class="req">*</span>الطراز (الموديل)</label><input type="text" id="carModel" placeholder="مثال: Mustang"><div class="err">مطلوب</div></div>
+        <div class="field" id="f_engineCapacity"><label>سعة المحرك</label><input type="text" id="engineCapacity" placeholder="مثال: 2000cc"></div>
         <div class="field" id="f_carYear"><label><span class="req">*</span>سنة الصنع</label><input type="number" id="carYear" min="1970" max="2027"><div class="err">أدخل سنة صحيحة</div></div>
         <div class="field" id="f_carPlate"><label><span class="req">*</span>رقم اللوحة</label><input type="text" id="carPlate"><div class="err">مطلوب</div></div>
         <div class="field" id="f_carColor"><label>لون السيارة</label><input type="text" id="carColor"></div>
@@ -553,7 +555,7 @@ function validateStep2(){
 }
 function validateStep3(){
   let ok = true;
-  ['carModel','carYear','carPlate','drivetrain'].forEach(k=>{ const bad=!val(k); fieldError(k,bad); if(bad) ok=false; });
+  ['carMake','carModel','carYear','carPlate','drivetrain'].forEach(k=>{ const bad=!val(k); fieldError(k,bad); if(bad) ok=false; });
   return ok;
 }
 function validateStep4(){
@@ -659,7 +661,8 @@ async function onSubmit(){
       phone: val('assistantPhone'), city: val('assistantCity')
     },
     car:{
-      carModel: val('carModel'), carYear: val('carYear'), carPlate: val('carPlate'), carColor: val('carColor'),
+      carMake: val('carMake'), carModel: val('carModel'), engineCapacity: val('engineCapacity'),
+      carYear: val('carYear'), carPlate: val('carPlate'), carColor: val('carColor'),
       drivetrain: val('drivetrain'),
       hasRollCage: document.getElementById('hasRollCage').checked,
       hasFireExt: document.getElementById('hasFireExt').checked,
@@ -715,7 +718,9 @@ async function buildAndDownloadZip(entry, raceNumber){
 عمر المساعد: ${entry.assistant.age}
 جوال المساعد: ${entry.assistant.phone}
 مدينة المساعد: ${entry.assistant.city}
-موديل السيارة: ${entry.car.carModel}
+الشركة المصنعة: ${entry.car.carMake}
+الطراز (الموديل): ${entry.car.carModel}
+سعة المحرك: ${entry.car.engineCapacity || '-'}
 رقم اللوحة: ${entry.car.carPlate}
 `;
     folder.file('بيانات_المتسابق.txt', info);
@@ -773,7 +778,7 @@ function renderAdminPanel(res, pass){
       ${res.entries.map(en=>`
         <tr>
           <td>${en.raceNumber}</td><td>${esc(en.fullName)}</td><td>${esc(en.nationalId)}</td>
-          <td>${esc(en.phone)}</td><td>${esc(en.category)}</td><td>${esc(en.assistantFullName)}</td><td>${esc(en.carModel)}</td>
+          <td>${esc(en.phone)}</td><td>${esc(en.category)}</td><td>${esc(en.assistantFullName)}</td><td>${esc([en.carMake, en.carModel].filter(Boolean).join(' '))}</td>
           <td><a href="${en.folderUrl}" target="_blank">فتح في Drive</a></td>
           <td><button class="admin-del-btn" data-id="${esc(en.nationalId)}">حذف</button></td>
         </tr>`).join('')}
