@@ -775,21 +775,21 @@ function renderAdminPanel(res, pass){
     <div style="overflow:auto;">
     <table class="admin-table">
       <tr>
-        <th colspan="12">بيانات المتسابق</th>
-        <th colspan="6">بيانات المساعد</th>
+        <th colspan="5">بيانات المتسابق</th>
+        <th colspan="3">بيانات المساعد</th>
         <th colspan="10">بيانات السيارة</th>
         <th rowspan="2">مجلد المستندات</th>
         <th rowspan="2">حذف</th>
       </tr>
       <tr>
-        <th>#</th><th>الاسم الكامل</th><th>رقم الهوية</th><th>تاريخ الميلاد</th><th>الجوال</th><th>البريد الإلكتروني</th><th>المدينة</th><th>الفئة</th><th>سنوات الخبرة</th><th>فصيلة الدم</th><th>جهة الطوارئ - الاسم</th><th>جهة الطوارئ - الجوال</th>
-        <th>الاسم الكامل</th><th>رقم الهوية</th><th>تاريخ الميلاد</th><th>العمر</th><th>الجوال</th><th>المدينة</th>
+        <th>#</th><th>الاسم</th><th>رقم الهوية</th><th>المدينة</th><th>فصيلة الدم</th>
+        <th>الاسم</th><th>رقم الهوية</th><th>العمر</th>
         <th>الشركة المصنعة</th><th>الطراز</th><th>سعة المحرك</th><th>سنة الصنع</th><th>رقم اللوحة</th><th>اللون</th><th>نظام الدفع</th><th>قفص حماية</th><th>طفاية حريق</th><th>حزام خماسي</th>
       </tr>
       ${res.entries.map(en=>`
         <tr>
-          <td>${en.raceNumber}</td><td>${esc(en.fullName)}</td><td>${esc(en.nationalId)}</td><td>${esc(en.dob)}</td><td>${esc(en.phone)}</td><td>${esc(en.email)}</td><td>${esc(en.city)}</td><td>${esc(en.category)}</td><td>${esc(en.experience)}</td><td>${esc(en.bloodType)}</td><td>${esc(en.emergencyName)}</td><td>${esc(en.emergencyPhone)}</td>
-          <td>${esc(en.assistantFullName)}</td><td>${esc(en.assistantNationalId)}</td><td>${esc(en.assistantDob)}</td><td>${esc(en.assistantAge)}</td><td>${esc(en.assistantPhone)}</td><td>${esc(en.assistantCity)}</td>
+          <td>${en.raceNumber}</td><td>${esc(en.fullName)}</td><td>${esc(en.nationalId)}</td><td>${esc(en.city)}</td><td>${esc(en.bloodType)}</td>
+          <td>${esc(en.assistantFullName)}</td><td>${esc(en.assistantNationalId)}</td><td>${esc(en.assistantAge)}</td>
           <td>${esc(en.carMake)}</td><td>${esc(en.carModel)}</td><td>${esc(en.engineCapacity)}</td><td>${esc(en.carYear)}</td><td>${esc(en.carPlate)}</td><td>${esc(en.carColor)}</td><td>${esc(en.drivetrain)}</td><td>${esc(en.hasRollCage)}</td><td>${esc(en.hasFireExt)}</td><td>${esc(en.hasHarness)}</td>
           <td><a href="${en.folderUrl}" target="_blank">فتح في Drive</a></td>
           <td><button class="admin-del-btn" data-id="${esc(en.nationalId)}">حذف</button></td>
