@@ -324,6 +324,20 @@ function step1(){
         <div class="field" id="f_emergencyName"><label><span class="req">*</span>جهة اتصال للطوارئ - الاسم</label><input type="text" id="emergencyName"><div class="err">مطلوب</div></div>
         <div class="field" id="f_emergencyPhone"><label><span class="req">*</span>جهة اتصال للطوارئ - رقم الجوال</label><input type="tel" id="emergencyPhone"><div class="err">مطلوب</div></div>
       </div>
+      <h4 style="margin:26px 0 4px;font-size:15px;">بيانات المساعد</h4>
+      <p style="margin:0 0 14px;font-size:12px;color:var(--muted);">يجب ألا يقل عمر المساعد عن 19 سنة</p>
+      <div class="grid">
+        <div class="field full" id="f_assistantFullName"><label><span class="req">*</span>الاسم الكامل للمساعد</label>
+          <input type="text" id="assistantFullName" placeholder="كما هو مسجل في الهوية"><div class="err">اسم المساعد يجب أن يكون ثلاثيًا أو رباعيًا (3 أو 4 كلمات)</div></div>
+        <div class="field" id="f_assistantNationalId"><label><span class="req">*</span>رقم هوية المساعد</label>
+          <input type="text" id="assistantNationalId" inputmode="numeric"><div class="err">مطلوب</div></div>
+        <div class="field" id="f_assistantAge"><label><span class="req">*</span>عمر المساعد</label>
+          <input type="number" id="assistantAge" min="0"><div class="err">يجب أن يكون عمر المساعد 19 سنة أو أكثر</div></div>
+        <div class="field" id="f_assistantPhone"><label><span class="req">*</span>رقم جوال المساعد</label>
+          <input type="tel" id="assistantPhone" placeholder="05XXXXXXXX"><div class="err">مطلوب</div></div>
+        <div class="field full" id="f_assistantCity"><label><span class="req">*</span>مدينة المساعد</label>
+          <input type="text" id="assistantCity"><div class="err">الرجاء إدخال المدينة</div></div>
+      </div>
       <div class="nav-row" style="justify-content:flex-end;">
         <button type="button" class="btn-next" id="toStep2">التالي</button>
       </div>
@@ -452,12 +466,21 @@ function val(id){ return document.getElementById(id).value.trim(); }
 
 function validateStep1(){
   let ok = true;
-  const req = ['nationalId','dob','phone','city','category','emergencyName','emergencyPhone'];
+  const req = ['nationalId','dob','phone','city','category','emergencyName','emergencyPhone',
+    'assistantNationalId','assistantAge','assistantPhone','assistantCity'];
   req.forEach(k=>{ const bad = !val(k); fieldError(k, bad); if(bad) ok=false; });
   const nameParts = val('fullName').split(/\s+/).filter(Boolean);
   const nameBad = nameParts.length < 3 || nameParts.length > 4;
   fieldError('fullName', nameBad);
   if(nameBad) ok=false;
+  const assistantNameParts = val('assistantFullName').split(/\s+/).filter(Boolean);
+  const assistantNameBad = assistantNameParts.length < 3 || assistantNameParts.length > 4;
+  fieldError('assistantFullName', assistantNameBad);
+  if(assistantNameBad) ok=false;
+  const assistantAge = val('assistantAge');
+  const assistantAgeBad = !assistantAge || Number(assistantAge) < 19;
+  fieldError('assistantAge', assistantAgeBad);
+  if(assistantAgeBad) ok=false;
   const email = val('email');
   if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ fieldError('email', true); ok=false; }
   const phone = val('phone');
@@ -564,6 +587,10 @@ async function onSubmit(){
     fullName: val('fullName'), nationalId: val('nationalId'), dob: val('dob'), phone: val('phone'),
     email: val('email'), city: val('city'), category: val('category'), experience: val('experience'),
     bloodType: val('bloodType'), emergencyName: val('emergencyName'), emergencyPhone: val('emergencyPhone'),
+    assistant:{
+      fullName: val('assistantFullName'), nationalId: val('assistantNationalId'),
+      age: val('assistantAge'), phone: val('assistantPhone'), city: val('assistantCity')
+    },
     car:{
       carModel: val('carModel'), carYear: val('carYear'), carPlate: val('carPlate'), carColor: val('carColor'),
       drivetrain: val('drivetrain'),
@@ -615,6 +642,11 @@ async function buildAndDownloadZip(entry, raceNumber){
 رقم الهوية: ${entry.nationalId}
 رقم الجوال: ${entry.phone}
 الفئة: ${entry.category}
+اسم المساعد: ${entry.assistant.fullName}
+هوية المساعد: ${entry.assistant.nationalId}
+عمر المساعد: ${entry.assistant.age}
+جوال المساعد: ${entry.assistant.phone}
+مدينة المساعد: ${entry.assistant.city}
 موديل السيارة: ${entry.car.carModel}
 رقم اللوحة: ${entry.car.carPlate}
 `;
@@ -667,11 +699,11 @@ function renderAdminPanel(res, pass){
     </div>
     <div style="overflow:auto;">
     <table class="admin-table">
-      <tr><th>#</th><th>الاسم</th><th>رقم الهوية</th><th>الجوال</th><th>الفئة</th><th>السيارة</th><th>مجلد المستندات</th><th>حذف</th></tr>
+      <tr><th>#</th><th>الاسم</th><th>رقم الهوية</th><th>الجوال</th><th>الفئة</th><th>المساعد</th><th>السيارة</th><th>مجلد المستندات</th><th>حذف</th></tr>
       ${res.entries.map(en=>`
         <tr>
           <td>${en.raceNumber}</td><td>${esc(en.fullName)}</td><td>${esc(en.nationalId)}</td>
-          <td>${esc(en.phone)}</td><td>${esc(en.category)}</td><td>${esc(en.carModel)}</td>
+          <td>${esc(en.phone)}</td><td>${esc(en.category)}</td><td>${esc(en.assistantFullName)}</td><td>${esc(en.carModel)}</td>
           <td><a href="${en.folderUrl}" target="_blank">فتح في Drive</a></td>
           <td><button class="admin-del-btn" data-id="${esc(en.nationalId)}">حذف</button></td>
         </tr>`).join('')}
