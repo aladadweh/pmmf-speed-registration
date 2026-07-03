@@ -259,7 +259,7 @@ function setupBanner(){
 }
 
 function stepBar(){
-  const labels = ['بيانات المتسابق','بيانات السيارة','المستندات والإرسال'];
+  const labels = ['بيانات المتسابق','بيانات المساعد','بيانات السيارة','المستندات والإرسال'];
   return `
   <div class="steps">
     ${labels.map((l,i)=>{
@@ -268,12 +268,12 @@ function stepBar(){
       return `<div class="step ${cls}"><b>0${n}</b>${l}</div>`;
     }).join('')}
   </div>
-  <div class="step-bar"><div class="step-bar-fill" style="width:${(state.step/3)*100}%"></div></div>`;
+  <div class="step-bar"><div class="step-bar-fill" style="width:${(state.step/4)*100}%"></div></div>`;
 }
 
 function closedScreen(){
   const s = state.status;
-  const reason = s.count>=s.cap ? "تم الوصول للعدد الأقصى من المشاركين (60 متسابقًا)." :
+  const reason = s.count>=s.cap ? `تم الوصول للعدد الأقصى من المشاركين (${s.cap} متسابقًا).` :
                  (s.daysLeft<=0 ? "انتهت المدة المخصصة لاستقبال طلبات الاشتراك." :
                  "تم إغلاق باب التسجيل من قبل إدارة الاتحاد.");
   return `${heroBlock()}
@@ -315,7 +315,7 @@ function step1(){
         <div class="field full" id="f_city"><label><span class="req">*</span>المدينة / العنوان</label>
           <input type="text" id="city"><div class="err">الرجاء إدخال المدينة</div></div>
         <div class="field" id="f_category"><label><span class="req">*</span>فئة المشاركة</label>
-          <select id="category"><option value="">اختر الفئة</option><option value="محترفين">دريفت محترفين</option><option value="هواة">دريفت هواة</option></select>
+          <select id="category"><option value="">اختر الفئة</option><option value="درفت">درفت</option><option value="سبيد">سبيد</option><option value="كارتنج">كارتنج</option><option value="دراجات نارية">دراجات نارية</option></select>
           <div class="err">اختر فئة المشاركة</div></div>
         <div class="field" id="f_experience"><label>سنوات الخبرة في الدريفت</label><input type="number" id="experience" min="0" placeholder="اختياري"></div>
         <div class="field" id="f_bloodType"><label>فصيلة الدم</label>
@@ -324,8 +324,18 @@ function step1(){
         <div class="field" id="f_emergencyName"><label><span class="req">*</span>جهة اتصال للطوارئ - الاسم</label><input type="text" id="emergencyName"><div class="err">مطلوب</div></div>
         <div class="field" id="f_emergencyPhone"><label><span class="req">*</span>جهة اتصال للطوارئ - رقم الجوال</label><input type="tel" id="emergencyPhone"><div class="err">مطلوب</div></div>
       </div>
-      <h4 style="margin:26px 0 4px;font-size:15px;">بيانات المساعد</h4>
-      <p style="margin:0 0 14px;font-size:12px;color:var(--muted);">يجب ألا يقل عمر المساعد عن 19 سنة</p>
+      <div class="nav-row" style="justify-content:flex-end;">
+        <button type="button" class="btn-next" id="toStep2">التالي</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function step2(){
+  return `
+  <div class="card" data-step="2">
+    <div class="card-head"><div class="card-num">02</div><div><h3>بيانات المساعد</h3><span>يجب ألا يقل عمر المساعد عن 19 سنة</span></div></div>
+    <div class="card-body">
       <div class="grid">
         <div class="field full" id="f_assistantFullName"><label><span class="req">*</span>الاسم الكامل للمساعد</label>
           <input type="text" id="assistantFullName" placeholder="كما هو مسجل في الهوية"><div class="err">اسم المساعد يجب أن يكون ثلاثيًا أو رباعيًا (3 أو 4 كلمات)</div></div>
@@ -338,17 +348,18 @@ function step1(){
         <div class="field full" id="f_assistantCity"><label><span class="req">*</span>مدينة المساعد</label>
           <input type="text" id="assistantCity"><div class="err">الرجاء إدخال المدينة</div></div>
       </div>
-      <div class="nav-row" style="justify-content:flex-end;">
-        <button type="button" class="btn-next" id="toStep2">التالي</button>
+      <div class="nav-row">
+        <button type="button" class="btn-back" id="toStep1">رجوع</button>
+        <button type="button" class="btn-next" id="toStep3">التالي</button>
       </div>
     </div>
   </div>`;
 }
 
-function step2(){
+function step3(){
   return `
-  <div class="card" data-step="2">
-    <div class="card-head"><div class="card-num">02</div><div><h3>بيانات السيارة</h3><span>معلومات السيارة المشاركة في السباق</span></div></div>
+  <div class="card" data-step="3">
+    <div class="card-head"><div class="card-num">03</div><div><h3>بيانات السيارة</h3><span>معلومات السيارة المشاركة في السباق</span></div></div>
     <div class="card-body">
       <div class="grid">
         <div class="field" id="f_carModel"><label><span class="req">*</span>نوع وموديل السيارة</label><input type="text" id="carModel" placeholder="مثال: Ford Mustang 2020"><div class="err">مطلوب</div></div>
@@ -363,17 +374,17 @@ function step2(){
       <div class="check-row"><input type="checkbox" id="hasFireExt"><label for="hasFireExt">تتوفر طفاية حريق ثابتة داخل السيارة</label></div>
       <div class="check-row"><input type="checkbox" id="hasHarness"><label for="hasHarness">حزام أمان خماسي النقاط (5-point harness) مثبّت</label></div>
       <div class="nav-row">
-        <button type="button" class="btn-back" id="toStep1">رجوع</button>
-        <button type="button" class="btn-next" id="toStep3">التالي</button>
+        <button type="button" class="btn-back" id="toStep2b">رجوع</button>
+        <button type="button" class="btn-next" id="toStep4">التالي</button>
       </div>
     </div>
   </div>`;
 }
 
-function step3(){
+function step4(){
   return `
-  <div class="card" data-step="3">
-    <div class="card-head"><div class="card-num">03</div><div><h3>المستندات والإرسال</h3><span>يرجى رفع صور واضحة — بحد أقصى 4 ميغابايت للملف</span></div></div>
+  <div class="card" data-step="4">
+    <div class="card-head"><div class="card-num">04</div><div><h3>المستندات والإرسال</h3><span>يرجى رفع صور واضحة — بحد أقصى 4 ميغابايت للملف</span></div></div>
     <div class="card-body">
       <div class="doc-grid">${DOCS.map(docCard).join('')}</div>
       <div class="check-row" style="margin-top:18px;" id="row_waiver">
@@ -385,7 +396,7 @@ function step3(){
         <label for="terms"><span class="req">*</span> أوافق على شروط وأحكام السباق وتعليمات السلامة الصادرة عن الاتحاد، وأتعهد بالالتزام الكامل بها طوال فعاليات الجولة.</label>
       </div>
       <div class="nav-row">
-        <button type="button" class="btn-back" id="toStep2b">رجوع</button>
+        <button type="button" class="btn-back" id="toStep3b">رجوع</button>
         <button type="button" class="btn-submit" id="submitBtn">إرسال طلب الاشتراك 🏁</button>
       </div>
       <div class="submit-note">سيتم حفظ بياناتك في قاعدة بيانات الاتحاد وإنشاء مجلد مستندات خاص بك جاهز للطباعة فور الإرسال</div>
@@ -398,7 +409,7 @@ function wizardScreen(){
   return `${heroBlock()}${stepBar()}
   <div class="shell">
     <form id="regForm" novalidate>
-      ${step1()}${step2()}${step3()}
+      ${step1()}${step2()}${step3()}${step4()}
     </form>
   </div>
   ${footerBlock()}`;
@@ -449,7 +460,7 @@ function goStep(n){
     c.style.display = (Number(c.dataset.step) === n) ? '' : 'none';
   });
   const bar = document.querySelector('.step-bar-fill');
-  if(bar) bar.style.width = (n/3*100)+'%';
+  if(bar) bar.style.width = (n/4*100)+'%';
   document.querySelectorAll('.step').forEach((el,i)=>{
     el.classList.remove('active','done');
     if(i+1===n) el.classList.add('active');
@@ -466,21 +477,12 @@ function val(id){ return document.getElementById(id).value.trim(); }
 
 function validateStep1(){
   let ok = true;
-  const req = ['nationalId','dob','phone','city','category','emergencyName','emergencyPhone',
-    'assistantNationalId','assistantAge','assistantPhone','assistantCity'];
+  const req = ['nationalId','dob','phone','city','category','emergencyName','emergencyPhone'];
   req.forEach(k=>{ const bad = !val(k); fieldError(k, bad); if(bad) ok=false; });
   const nameParts = val('fullName').split(/\s+/).filter(Boolean);
   const nameBad = nameParts.length < 3 || nameParts.length > 4;
   fieldError('fullName', nameBad);
   if(nameBad) ok=false;
-  const assistantNameParts = val('assistantFullName').split(/\s+/).filter(Boolean);
-  const assistantNameBad = assistantNameParts.length < 3 || assistantNameParts.length > 4;
-  fieldError('assistantFullName', assistantNameBad);
-  if(assistantNameBad) ok=false;
-  const assistantAge = val('assistantAge');
-  const assistantAgeBad = !assistantAge || Number(assistantAge) < 19;
-  fieldError('assistantAge', assistantAgeBad);
-  if(assistantAgeBad) ok=false;
   const email = val('email');
   if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ fieldError('email', true); ok=false; }
   const phone = val('phone');
@@ -489,10 +491,24 @@ function validateStep1(){
 }
 function validateStep2(){
   let ok = true;
-  ['carModel','carYear','carPlate','drivetrain'].forEach(k=>{ const bad=!val(k); fieldError(k,bad); if(bad) ok=false; });
+  const req = ['assistantNationalId','assistantAge','assistantPhone','assistantCity'];
+  req.forEach(k=>{ const bad = !val(k); fieldError(k, bad); if(bad) ok=false; });
+  const assistantNameParts = val('assistantFullName').split(/\s+/).filter(Boolean);
+  const assistantNameBad = assistantNameParts.length < 3 || assistantNameParts.length > 4;
+  fieldError('assistantFullName', assistantNameBad);
+  if(assistantNameBad) ok=false;
+  const assistantAge = val('assistantAge');
+  const assistantAgeBad = !assistantAge || Number(assistantAge) < 19;
+  fieldError('assistantAge', assistantAgeBad);
+  if(assistantAgeBad) ok=false;
   return ok;
 }
 function validateStep3(){
+  let ok = true;
+  ['carModel','carYear','carPlate','drivetrain'].forEach(k=>{ const bad=!val(k); fieldError(k,bad); if(bad) ok=false; });
+  return ok;
+}
+function validateStep4(){
   let ok = true;
   DOCS.forEach(doc=>{
     const card = document.getElementById('doccard_'+doc.key);
@@ -542,6 +558,8 @@ function wireWizard(){
   document.getElementById('toStep1').addEventListener('click', ()=> goStep(1));
   document.getElementById('toStep3').addEventListener('click', ()=>{ if(validateStep2()) goStep(3); else scrollToFirstInvalid(); });
   document.getElementById('toStep2b').addEventListener('click', ()=> goStep(2));
+  document.getElementById('toStep4').addEventListener('click', ()=>{ if(validateStep3()) goStep(4); else scrollToFirstInvalid(); });
+  document.getElementById('toStep3b').addEventListener('click', ()=> goStep(3));
 
   DOCS.forEach(doc=>{
     const input = document.getElementById('docinput_'+doc.key);
@@ -578,7 +596,7 @@ function scrollToFirstInvalid(){
 
 async function onSubmit(){
   if(state.submitting) return;
-  if(!validateStep3()){ scrollToFirstInvalid(); return; }
+  if(!validateStep4()){ scrollToFirstInvalid(); return; }
 
   const msg = document.getElementById('formMsg');
   msg.style.display='none';
