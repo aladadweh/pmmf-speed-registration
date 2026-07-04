@@ -332,8 +332,9 @@ function step1(){
           <input type="text" id="category" value="درفت" readonly style="background:#f6f3ec; font-weight:700; cursor:not-allowed;"></div>
         <div class="field" id="f_experience"><label>مستوى الخبرة</label>
           <select id="experience"><option value="">اختياري</option><option value="مبتدئ">مبتدئ</option><option value="متسابق سابق">متسابق سابق</option></select></div>
-        <div class="field" id="f_bloodType"><label>فصيلة الدم</label>
-          <select id="bloodType"><option value="">غير محدد</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
+        <div class="field" id="f_bloodType"><label><span class="req">*</span>فصيلة الدم</label>
+          <select id="bloodType"><option value="">اختر</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select>
+          <div class="err">فصيلة الدم مطلوبة</div>
           <div class="hint">لتسريع الإسعاف عند الحاجة</div></div>
         <div class="field" id="f_emergencyName"><label><span class="req">*</span>جهة اتصال للطوارئ - الاسم</label><input type="text" id="emergencyName"><div class="err">مطلوب</div></div>
         <div class="field" id="f_emergencyPhone"><label><span class="req">*</span>جهة اتصال للطوارئ - رقم الجوال</label><input type="tel" id="emergencyPhone"><div class="err">مطلوب</div></div>
@@ -390,7 +391,7 @@ function step3(){
       <div class="grid">
         <div class="field" id="f_carMake"><label><span class="req">*</span>الشركة المصنعة</label><input type="text" id="carMake" placeholder="مثال: Ford"><div class="err">مطلوب</div></div>
         <div class="field" id="f_carModel"><label><span class="req">*</span>الطراز (الموديل)</label><input type="text" id="carModel" placeholder="مثال: Mustang"><div class="err">مطلوب</div></div>
-        <div class="field" id="f_engineCapacity"><label>سعة المحرك</label><input type="text" id="engineCapacity" placeholder="مثال: 2000cc"></div>
+        <div class="field" id="f_engineCapacity"><label><span class="req">*</span>سعة المحرك</label><input type="text" id="engineCapacity" placeholder="مثال: 2000CC أو 1.6T"><div class="err">أدخل رقمًا متبوعًا بـ CC أو T، مثال: 2000CC أو 1.6T</div></div>
         <div class="field" id="f_carYear"><label><span class="req">*</span>سنة الصنع</label><input type="number" id="carYear" min="1970" max="2027"><div class="err">أدخل سنة صحيحة</div></div>
         <div class="field" id="f_carPlate"><label><span class="req">*</span>رقم اللوحة</label><input type="text" id="carPlate"><div class="err">مطلوب</div></div>
         <div class="field" id="f_carColor"><label>لون السيارة</label><input type="text" id="carColor"></div>
@@ -398,16 +399,11 @@ function step3(){
           <select id="drivetrain"><option value="">اختر</option><option value="خلفي">دفع خلفي (RWD) — مطابق لمعايير الدريفت</option><option value="أمامي">دفع أمامي (FWD)</option><option value="رباعي">دفع رباعي (AWD)</option></select>
           <div class="err">مطلوب</div></div>
       </div>
+      <div class="check-row"><input type="checkbox" id="hasSeat"><label for="hasSeat">مقعد مطابق للمواصفات ومثبت بطريقة صحيحة</label></div>
       <div class="check-row"><input type="checkbox" id="hasRollCage"><label for="hasRollCage">السيارة مجهزة بقفص حماية (Roll Cage) مطابق لمعايير الأمان</label></div>
-      <div class="check-row"><input type="checkbox" id="hasFireExt"><label for="hasFireExt">تتوفر طفاية حريق ثابتة داخل السيارة</label></div>
+      <div class="check-row"><input type="checkbox" id="hasFireExt"><label for="hasFireExt">تتوفر طفاية حريق ثابتة داخل السيارة او مركزية</label></div>
       <div class="check-row"><input type="checkbox" id="hasHarness"><label for="hasHarness">حزام أمان خماسي النقاط (5-point harness) مثبّت</label></div>
-      ${termsBox('شروط السيارة', [
-        'مقعد مطابق للمواصفات ومثبت بطريقة صحيحة',
-        'حزام أمان مطابق للمواصفات ومثبت بطريقة صحيحة',
-        'قفص حماية (رول كيج) مطابق للمواصفات ومثبت بطريقة صحيحة',
-        'طفاية حريق فعّالة وتوجد بها صلاحية',
-        'نقاط السحب الأمامية والخلفية واضحة للاستخدام'
-      ])}
+      <div class="check-row"><input type="checkbox" id="hasTowPoints"><label for="hasTowPoints">نقاط السحب الأمامية والخلفية واضحة للاستخدام</label></div>
       <div class="nav-row">
         <button type="button" class="btn-back" id="toStep2b">رجوع</button>
         <button type="button" class="btn-next" id="toStep4">التالي</button>
@@ -527,7 +523,7 @@ function calcAge(dobStr){
 
 function validateStep1(){
   let ok = true;
-  const req = ['nationalId','dob','phone','city','emergencyName','emergencyPhone'];
+  const req = ['nationalId','dob','phone','city','bloodType','emergencyName','emergencyPhone'];
   req.forEach(k=>{ const bad = !val(k); fieldError(k, bad); if(bad) ok=false; });
   const nameParts = val('fullName').split(/\s+/).filter(Boolean);
   const nameBad = nameParts.length < 3 || nameParts.length > 4;
@@ -556,6 +552,9 @@ function validateStep2(){
 function validateStep3(){
   let ok = true;
   ['carMake','carModel','carYear','carPlate','drivetrain'].forEach(k=>{ const bad=!val(k); fieldError(k,bad); if(bad) ok=false; });
+  const engineCapacityBad = !/^\d+(\.\d+)?\s*(cc|t)$/i.test(val('engineCapacity'));
+  fieldError('engineCapacity', engineCapacityBad);
+  if(engineCapacityBad) ok=false;
   return ok;
 }
 function validateStep4(){
@@ -664,9 +663,11 @@ async function onSubmit(){
       carMake: val('carMake'), carModel: val('carModel'), engineCapacity: val('engineCapacity'),
       carYear: val('carYear'), carPlate: val('carPlate'), carColor: val('carColor'),
       drivetrain: val('drivetrain'),
+      hasSeat: document.getElementById('hasSeat').checked,
       hasRollCage: document.getElementById('hasRollCage').checked,
       hasFireExt: document.getElementById('hasFireExt').checked,
-      hasHarness: document.getElementById('hasHarness').checked
+      hasHarness: document.getElementById('hasHarness').checked,
+      hasTowPoints: document.getElementById('hasTowPoints').checked
     },
     files: state.files
   };
@@ -777,20 +778,20 @@ function renderAdminPanel(res, pass){
       <tr>
         <th colspan="5">بيانات المتسابق</th>
         <th colspan="3">بيانات المساعد</th>
-        <th colspan="10">بيانات السيارة</th>
+        <th colspan="12">بيانات السيارة</th>
         <th rowspan="2">مجلد المستندات</th>
         <th rowspan="2">حذف</th>
       </tr>
       <tr>
         <th>#</th><th>الاسم</th><th>رقم الهوية</th><th>المدينة</th><th>فصيلة الدم</th>
         <th>الاسم</th><th>رقم الهوية</th><th>العمر</th>
-        <th>الشركة المصنعة</th><th>الطراز</th><th>سعة المحرك</th><th>سنة الصنع</th><th>رقم اللوحة</th><th>اللون</th><th>نظام الدفع</th><th>قفص حماية</th><th>طفاية حريق</th><th>حزام خماسي</th>
+        <th>الشركة المصنعة</th><th>الطراز</th><th>سعة المحرك</th><th>سنة الصنع</th><th>رقم اللوحة</th><th>اللون</th><th>نظام الدفع</th><th>مقعد</th><th>قفص حماية</th><th>طفاية حريق</th><th>حزام خماسي</th><th>نقاط السحب</th>
       </tr>
       ${res.entries.map(en=>`
         <tr>
           <td>${en.raceNumber}</td><td>${esc(en.fullName)}</td><td>${esc(en.nationalId)}</td><td>${esc(en.city)}</td><td>${esc(en.bloodType)}</td>
           <td>${esc(en.assistantFullName)}</td><td>${esc(en.assistantNationalId)}</td><td>${esc(en.assistantAge)}</td>
-          <td>${esc(en.carMake)}</td><td>${esc(en.carModel)}</td><td>${esc(en.engineCapacity)}</td><td>${esc(en.carYear)}</td><td>${esc(en.carPlate)}</td><td>${esc(en.carColor)}</td><td>${esc(en.drivetrain)}</td><td>${esc(en.hasRollCage)}</td><td>${esc(en.hasFireExt)}</td><td>${esc(en.hasHarness)}</td>
+          <td>${esc(en.carMake)}</td><td>${esc(en.carModel)}</td><td>${esc(en.engineCapacity)}</td><td>${esc(en.carYear)}</td><td>${esc(en.carPlate)}</td><td>${esc(en.carColor)}</td><td>${esc(en.drivetrain)}</td><td>${esc(en.hasSeat)}</td><td>${esc(en.hasRollCage)}</td><td>${esc(en.hasFireExt)}</td><td>${esc(en.hasHarness)}</td><td>${esc(en.hasTowPoints)}</td>
           <td><a href="${en.folderUrl}" target="_blank">فتح في Drive</a></td>
           <td><button class="admin-del-btn" data-id="${esc(en.nationalId)}">حذف</button></td>
         </tr>`).join('')}
