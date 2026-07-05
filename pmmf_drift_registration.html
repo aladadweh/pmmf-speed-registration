@@ -193,6 +193,13 @@
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<!-- html2pdf (html2canvas + jsPDF): توليد نسخة الـPDF داخل متصفح المشترك لحظة التسجيل بمطابقة
+     كاملة للتصميم - بديل عن محوّل Google HTML→Docs الذي يُسقط معظم خصائص CSS. عند فشل التحميل
+     (لا إنترنت للمكتبة مثلًا) يسقط النظام تلقائيًا للتوليد الخادمي في Apps Script. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap">
 <script>
 (function(){
 
@@ -458,7 +465,7 @@ function successScreen(entry, raceNumber){
     <p style="color:var(--muted);font-size:14px;">${esc(entry.fullName)} — سيتم التواصل معك للتأكيد النهائي</p>
     <div class="race-number">#${String(raceNumber).padStart(2,'0')}</div>
     <div style="font-size:13px;color:var(--muted);">رقم ترتيبك في قائمة المشاركين</div>
-    <div><button class="btn-secondary" id="downloadAgain">تنزيل نسخة الوثائق</button></div>
+    <div><button class="btn-secondary" id="downloadAgain">تنزيل نسخة الوثائق</button>${state.generatedPdf ? ' <button class="btn-secondary" id="downloadPdf">تحميل نموذج التسجيل PDF</button>' : ''}</div>
   </div>${footerBlock()}`;
 }
 
@@ -643,6 +650,231 @@ function scrollToFirstInvalid(){
   document.querySelector('.invalid')?.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
+// ---------------- توليد نسخة الـPDF داخل المتصفح ----------------
+// القالب أدناه منقول حرفيًا من التصميم المرجعي المعتمد (pmmf-registration-form.html) مع
+// تحويل ألوان oklch/color-mix إلى HEX مكافئة، لأن html2canvas لا يدعم دوال الألوان الحديثة.
+// letter-spacing محذوفة عمدًا: html2canvas يرسم الحروف واحدًا واحدًا عند ضبطها فيكسر تشكيل العربية.
+const PDF_COLORS = {
+  black:'#0d0a0b', red:'#c9000c', green:'#00602a', ink:'#171b1f',
+  paper:'#fbfaf7', line:'#d5d8db', muted:'#51565b',
+  tintBlack:'#efefee', tintRed:'#f9eeec', tintGreen:'#eef3ee'
+};
+
+// شريط العلم المتقطّع (رقعة الشطرنج) يُرسم على canvas حقيقي ويُضمَّن كصورة، لأن دعم html2canvas
+// لخلفيات الـgradient المتعددة المتراكبة (تقنية المرجع الأصلية) غير موثوق.
+function checkerDataUrl(w, h, sq){
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h);
+  g.fillStyle = PDF_COLORS.black;
+  for(let y = 0; y < h / sq; y++){
+    for(let x = 0; x < w / sq; x++){
+      if((x + y) % 2 === 0) g.fillRect(x * sq, y * sq, sq, sq);
+    }
+  }
+  return c.toDataURL('image/png');
+}
+
+function pdfDocumentHtml(entry, regNumber){
+  const C = PDF_COLORS;
+  const a = entry.assistant || {};
+  const car = entry.car || {};
+  const yn = v => v ? 'نعم' : 'لا';
+  const row = (label, value) =>
+    `<div class="pdf-row"><div class="pdf-label">${esc(label)}</div><div class="pdf-value">${esc(String(value || '—'))}</div></div>`;
+  const section = (num, arTitle, enTag, rowsHtml) => `
+    <div class="pdf-section">
+      <div class="pdf-sec-title">
+        <span class="pdf-num">${num}</span>
+        <h4>${esc(arTitle)}</h4>
+        <span class="pdf-en" dir="ltr">${enTag}</span>
+        <div class="pdf-line"></div>
+      </div>
+      <div class="pdf-grid">${rowsHtml}</div>
+    </div>`;
+
+  return `
+  <div id="pdfPrintRoot" dir="rtl">
+    <style>
+      #pdfPrintRoot{width:794px;background:#ffffff;color:${C.ink};font-family:'Cairo','Segoe UI',Tahoma,Arial,sans-serif;font-size:14px;line-height:1.5;}
+      #pdfPrintRoot *{box-sizing:border-box;margin:0;padding:0;}
+      #pdfPrintRoot .pdf-flagbar{height:8px;background:linear-gradient(to left, ${C.black} 0 25%, #ffffff 25% 50%, ${C.green} 50% 75%, ${C.red} 75% 100%);}
+      #pdfPrintRoot .pdf-header{padding:20px 24px 12px;border-bottom:4px solid ${C.black};position:relative;}
+      #pdfPrintRoot .pdf-checker{position:absolute;top:0;right:0;height:24px;width:160px;}
+      #pdfPrintRoot .pdf-header-row{display:flex;align-items:center;justify-content:space-between;gap:16px;}
+      #pdfPrintRoot .pdf-logo-pmmf{height:72px;width:auto;}
+      #pdfPrintRoot .pdf-logo-fia-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;}
+      #pdfPrintRoot .pdf-logo-fia{height:72px;width:auto;}
+      #pdfPrintRoot .pdf-fia-label{font-size:10px;font-weight:700;color:${C.ink};}
+      #pdfPrintRoot .pdf-title-block{margin-top:10px;text-align:center;}
+      #pdfPrintRoot .pdf-title-block h1{font-weight:700;font-size:24px;color:${C.black};line-height:1.3;}
+      #pdfPrintRoot .pdf-title-block h2{font-size:13px;font-weight:600;color:${C.red};margin-top:2px;}
+      #pdfPrintRoot .pdf-band{background:${C.black};border-top:2px solid ${C.red};border-bottom:2px solid ${C.red};color:#ffffff;padding:16px 40px;display:flex;align-items:center;justify-content:space-between;}
+      #pdfPrintRoot .pdf-band-left{display:flex;align-items:center;gap:12px;}
+      #pdfPrintRoot .pdf-band-bar{width:8px;height:32px;background:${C.red};display:inline-block;}
+      #pdfPrintRoot .pdf-band h3{font-size:18px;font-weight:700;}
+      #pdfPrintRoot .pdf-band .pdf-reg{font-size:12px;opacity:0.85;font-weight:700;}
+      #pdfPrintRoot .pdf-body{padding:32px 40px;display:flex;flex-direction:column;gap:32px;}
+      #pdfPrintRoot .pdf-section{page-break-inside:avoid;}
+      #pdfPrintRoot .pdf-sec-title{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+      #pdfPrintRoot .pdf-num{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;background:${C.black};color:#ffffff;font-weight:700;font-size:14px;border:2px solid ${C.red};flex-shrink:0;}
+      #pdfPrintRoot .pdf-sec-title h4{font-weight:700;color:${C.black};font-size:16px;}
+      #pdfPrintRoot .pdf-en{font-size:11px;text-transform:uppercase;color:${C.muted};font-weight:700;white-space:nowrap;}
+      #pdfPrintRoot .pdf-line{flex:1;height:1px;background:${C.line};}
+      #pdfPrintRoot .pdf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;border:2px solid ${C.red};}
+      #pdfPrintRoot .pdf-row{display:grid;grid-template-columns:150px 1fr;align-items:stretch;border-bottom:1px solid ${C.red};}
+      #pdfPrintRoot .pdf-grid .pdf-row:nth-last-child(-n+2){border-bottom:none;}
+      #pdfPrintRoot .pdf-label{background:${C.black};color:#ffffff;padding:11px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;border-left:2px solid ${C.red};}
+      #pdfPrintRoot .pdf-value{padding:11px 14px;font-size:13px;color:${C.ink};background:#ffffff;display:flex;align-items:center;min-height:44px;}
+      #pdfPrintRoot .pdf-decls{list-style:none;border:1px solid ${C.line};}
+      #pdfPrintRoot .pdf-decls li{display:flex;align-items:center;gap:14px;padding:12px 14px;font-size:13px;border-bottom:1px solid ${C.line};background:#ffffff;}
+      #pdfPrintRoot .pdf-decls li:last-child{border-bottom:none;}
+      #pdfPrintRoot .pdf-decls li.odd{background:${C.paper};}
+      #pdfPrintRoot .pdf-check{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:${C.green};color:#ffffff;font-weight:700;flex-shrink:0;}
+      #pdfPrintRoot .pdf-decls .pdf-text{flex:1;color:${C.ink};}
+      #pdfPrintRoot .pdf-confirmed{font-size:11px;font-weight:700;color:${C.green};}
+      #pdfPrintRoot .pdf-sigs{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;padding-top:20px;page-break-inside:avoid;}
+      #pdfPrintRoot .pdf-sig-label{font-size:13px;font-weight:700;color:${C.black};margin-bottom:8px;}
+      #pdfPrintRoot .pdf-sig-area{height:96px;border:1px dashed ${C.black};border-top:4px solid ${C.black};display:flex;align-items:center;justify-content:center;}
+      #pdfPrintRoot .pdf-sig-name{font-size:15px;font-weight:700;color:${C.ink};}
+      #pdfPrintRoot .pdf-sig-black .pdf-sig-area{border-color:${C.black};border-top-color:${C.black};background:${C.tintBlack};}
+      #pdfPrintRoot .pdf-sig-red .pdf-sig-area{border-color:${C.red};border-top-color:${C.red};background:${C.tintRed};}
+      #pdfPrintRoot .pdf-sig-green .pdf-sig-area{border-color:${C.green};border-top-color:${C.green};background:${C.tintGreen};}
+      #pdfPrintRoot .pdf-footer{margin-top:16px;border-top:2px solid ${C.black};page-break-inside:avoid;}
+      #pdfPrintRoot .pdf-footer-flag{height:6px;background:linear-gradient(to left, ${C.black} 0 25%, #ffffff 25% 50%, ${C.green} 50% 75%, ${C.red} 75% 100%);}
+      #pdfPrintRoot .pdf-footer-content{padding:16px 40px;display:flex;align-items:center;justify-content:space-between;font-size:11px;color:${C.ink};background:${C.paper};}
+      #pdfPrintRoot .pdf-fed-name{font-weight:700;}
+      #pdfPrintRoot .pdf-muted{color:${C.muted};}
+    </style>
+
+    <div class="pdf-flagbar"></div>
+
+    <div class="pdf-header">
+      <img class="pdf-checker" src="${checkerDataUrl(160, 24, 8)}" alt="">
+      <div class="pdf-header-row">
+        <img class="pdf-logo-pmmf" src="${ASSETS.pmmf}" alt="PMMF">
+        <div class="pdf-logo-fia-wrap">
+          <img class="pdf-logo-fia" src="${ASSETS.fia}" alt="FIA">
+          <span class="pdf-fia-label">FIA MEMBER</span>
+        </div>
+      </div>
+      <div class="pdf-title-block">
+        <h1>الاتحاد الفلسطيني لرياضة السيارات والدراجات النارية</h1>
+        <h2 dir="ltr">Palestinian Motorsport &amp; Motorcycle Federation</h2>
+      </div>
+    </div>
+
+    <div class="pdf-band">
+      <div class="pdf-band-left">
+        <span class="pdf-band-bar"></span>
+        <h3>نموذج اشتراك — سباق الدرفت — الجولة الأولى لعام 2026</h3>
+      </div>
+      <div class="pdf-reg" dir="ltr">REG #${String(regNumber).padStart(2,'0')}</div>
+    </div>
+
+    <div class="pdf-body">
+      ${section('01', 'بيانات المتسابق', 'Driver Information',
+        row('الاسم الكامل', entry.fullName) + row('رقم الهوية', entry.nationalId) +
+        row('تاريخ الميلاد', entry.dob) + row('رقم الجوال', entry.phone) +
+        row('البريد الإلكتروني', entry.email) + row('المدينة', entry.city) +
+        row('فئة المشاركة', entry.category) + row('مستوى الخبرة', entry.experience) +
+        row('فصيلة الدم', entry.bloodType) + row('جهة اتصال الطوارئ', entry.emergencyName + ' — ' + entry.emergencyPhone)
+      )}
+      ${section('02', 'بيانات المساعد', 'Co-Driver Information',
+        row('الاسم الكامل', a.fullName) + row('رقم الهوية', a.nationalId) +
+        row('تاريخ الميلاد', a.dob) + row('العمر', a.age) +
+        row('رقم الجوال', a.phone) + row('المدينة', a.city)
+      )}
+      ${section('03', 'بيانات السيارة', 'Vehicle Information',
+        row('الشركة المصنعة', car.carMake) + row('الطراز (الموديل)', car.carModel) +
+        row('سعة المحرك', car.engineCapacity) + row('سنة الصنع', car.carYear) +
+        row('رقم اللوحة', car.carPlate) + row('اللون', car.carColor) +
+        row('نظام الدفع', car.drivetrain) + row('قفص حماية', yn(car.hasRollCage)) +
+        row('طفاية حريق', yn(car.hasFireExt)) + row('حزام خماسي', yn(car.hasHarness)) +
+        row('مقعد مطابق ومثبت', yn(car.hasSeat)) + row('نقاط السحب', yn(car.hasTowPoints))
+      )}
+
+      <div class="pdf-section">
+        <div class="pdf-sec-title">
+          <span class="pdf-num">04</span>
+          <h4>الإقرارات</h4>
+          <span class="pdf-en" dir="ltr">Declarations</span>
+          <div class="pdf-line"></div>
+        </div>
+        <ul class="pdf-decls">
+          <li><span class="pdf-check">✓</span><span class="pdf-text">إقرار المشاركة على المسؤولية الشخصية</span><span class="pdf-confirmed">تم التأكيد</span></li>
+          <li class="odd"><span class="pdf-check">✓</span><span class="pdf-text">الموافقة على شروط وأحكام السباق</span><span class="pdf-confirmed">تم التأكيد</span></li>
+        </ul>
+      </div>
+
+      <div class="pdf-sigs">
+        <div class="pdf-sig-black">
+          <div class="pdf-sig-label">توقيع المتسابق:</div>
+          <div class="pdf-sig-area"></div>
+        </div>
+        <div class="pdf-sig-red">
+          <div class="pdf-sig-label">مدير اللجنة الفنية:</div>
+          <div class="pdf-sig-area"><span class="pdf-sig-name">محمد عدوي</span></div>
+        </div>
+        <div class="pdf-sig-green">
+          <div class="pdf-sig-label">مدير السباق:</div>
+          <div class="pdf-sig-area"><span class="pdf-sig-name">حكم حامد</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pdf-footer">
+      <div class="pdf-footer-flag"></div>
+      <div class="pdf-footer-content">
+        <div>
+          <div class="pdf-fed-name">الاتحاد الفلسطيني لرياضة السيارات والدراجات النارية</div>
+          <div class="pdf-muted" dir="ltr">Ramallah — Palestine · info@pmmf.ps · www.pmmf.ps</div>
+        </div>
+        <div class="pdf-muted" style="text-align:left;">
+          <div>PMMF · 2026</div>
+          <div dir="ltr">FIA Affiliated Member</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// يُصيّر القالب في عنصر مخفي خارج الشاشة ويحوّله إلى PDF (A4 عمودي) ويعيده data URL،
+// أو null عند أي فشل (المكتبة غير محمّلة، خطأ تصيير...) - عندها يتولى الباك إند التوليد الخادمي.
+async function generateRegistrationPdf(entry, regNumber){
+  if(typeof html2pdf === 'undefined') return null;
+  const host = document.createElement('div');
+  host.style.cssText = 'position:fixed;left:-99999px;top:0;width:794px;background:#ffffff;';
+  host.innerHTML = pdfDocumentHtml(entry, regNumber);
+  document.body.appendChild(host);
+  try{
+    if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
+    return await html2pdf().set({
+      margin: 0,
+      image: { type: 'jpeg', quality: 0.92 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'] }
+    }).from(host.firstElementChild).output('datauristring');
+  }catch(err){
+    return null;
+  }finally{
+    host.remove();
+  }
+}
+
+function downloadGeneratedPdf(entry){
+  const g = state.generatedPdf;
+  if(!g) return;
+  const link = document.createElement('a');
+  link.href = g.dataUrl;
+  link.download = entry.fullName + ' - نموذج التسجيل.pdf';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+}
+
 async function onSubmit(){
   if(state.submitting) return;
   if(!validateStep4()){ scrollToFirstInvalid(); return; }
@@ -674,8 +906,23 @@ async function onSubmit(){
 
   state.submitting = true;
   const btn = document.getElementById('submitBtn');
-  btn.disabled = true; btn.textContent = 'جارٍ الإرسال...';
+  btn.disabled = true; btn.textContent = 'جارٍ تجهيز النموذج...';
 
+  // توليد نسخة الـPDF في المتصفح برقم تسجيل متوقع (= العدد الحالي + 1 بعد تحديث الحالة).
+  // الباك إند يقبلها فقط إن طابق الرقم المتوقع الرقم الفعلي عنده، وإلا يعيد التوليد خادميًا -
+  // فالسباق النادر بين تسجيلين متزامنين لا يُنتج أبدًا رقمًا خاطئًا داخل النموذج المرسَل.
+  let predictedReg = null, pdfDataUrl = null;
+  try{
+    state.status = await api('status');
+    predictedReg = (Number(state.status.count) || 0) + 1;
+    pdfDataUrl = await generateRegistrationPdf(entry, predictedReg);
+  }catch(err){ pdfDataUrl = null; }
+  if(pdfDataUrl){
+    entry.pdfFile = pdfDataUrl;
+    entry.pdfRegNumber = predictedReg;
+  }
+
+  btn.textContent = 'جارٍ الإرسال...';
   let result;
   try{
     result = await api('register', {payload: entry});
@@ -696,10 +943,18 @@ async function onSubmit(){
     return;
   }
 
+  // نسخة الـPDF المحلية صالحة للتنزيل فقط إذا طابق رقمها المتوقع الرقم الفعلي من الخادم
+  if(pdfDataUrl && predictedReg === result.raceNumber){
+    state.generatedPdf = { dataUrl: pdfDataUrl, raceNumber: result.raceNumber };
+  } else {
+    state.generatedPdf = null;
+  }
+
   await buildAndDownloadZip(entry, result.raceNumber);
   app.innerHTML = successScreen(entry, result.raceNumber);
   wireFooter();
   document.getElementById('downloadAgain')?.addEventListener('click', ()=> buildAndDownloadZip(entry, result.raceNumber));
+  document.getElementById('downloadPdf')?.addEventListener('click', ()=> downloadGeneratedPdf(entry));
 }
 
 async function buildAndDownloadZip(entry, raceNumber){

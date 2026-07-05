@@ -75,6 +75,15 @@ tag, used only to let a submitter re-download their uploaded documents as a zip 
 - `renderAdminPanel()` / `openAdminGate()` — a password-gated admin overlay (triggered from the
   footer) that lists registrants and can delete one (`action: 'delete'`, keyed by national ID) or
   toggle registration open/closed (`action: 'toggleClose'`).
+- **Registration-PDF generation happens client-side** (`pdfDocumentHtml()` +
+  `generateRegistrationPdf()`, via html2pdf.js from a CDN): `onSubmit()` refreshes `status`,
+  predicts the race number as `count + 1`, renders the form copy to a PDF data URL in the
+  browser (full CSS fidelity — this exists because Google's HTML→Docs converter strips modern
+  CSS), and sends it in the register payload as `pdfFile` + `pdfRegNumber`. The backend only
+  uses it if `pdfRegNumber` matches the race number it computes; otherwise (or if the client
+  PDF is missing/failed) it regenerates server-side via `buildRegistrationPdfBlob()`. The PDF
+  template uses literal hex colors, not oklch/color-mix, and no letter-spacing — html2canvas
+  doesn't support them (letter-spacing breaks Arabic ligatures).
 - All user-facing strings are Arabic; keep new UI text Arabic and RTL-consistent.
 
 ### Backend (`pmmf_backend_apps_script.gs`)
@@ -92,8 +101,12 @@ calls must stay in sync.
   add/reorder a field in `getSheet()`'s header row or `handleRegister()`'s `appendRow()` call, you
   must update both together, plus any hardcoded column indices in `handleAdmin()`.
 - On registration, creates a per-registrant Drive folder (named `fullName - nationalId`) containing
-  a text summary (`buildInfoText()`) and the uploaded files (decoded from the data URLs the
-  frontend sends).
+  a text summary (`buildInfoText()`), the uploaded files (decoded from the data URLs the
+  frontend sends), and the registration-form PDF (client-generated `pdfFile` when its
+  `pdfRegNumber` matches, else server-generated — see frontend section). Server-side PDF
+  generation requires the **Drive API** and **Google Docs API** advanced services to be enabled
+  in the Apps Script editor; failures are surfaced as a technical note in the federation email
+  via the `diagnostics` array, not swallowed.
 - Admin actions (`admin`, `toggleClose`, `delete`) all check `data.pass` against
   `getAdminPasscode()` (stored in Script Properties, seeded by manually running
   `setAdminPasscode()` once from the Apps Script editor — never rely on `DEFAULT_ADMIN_PASSCODE`
