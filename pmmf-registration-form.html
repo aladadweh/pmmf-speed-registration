@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>طلب ترشح — الاتحاد الفلسطيني لرياضة السيارات والدراجات النارية</title>
+<meta name="description" content="نموذج طلب الترشح لوظيفة إشرافية — الاتحاد الفلسطيني لرياضة السيارات والدراجات النارية (PMMF)" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Rakkas&display=swap" />
+<style>
+  :root {
+    --radius: 0.5rem;
+
+    /* Palestinian flag palette */
+    --pmmf-black: oklch(0.15 0.005 0);
+    --pmmf-red:   oklch(0.52 0.22 27);
+    --pmmf-green: oklch(0.42 0.13 155);
+    --pmmf-white: oklch(1 0 0);
+    --pmmf-ink:   oklch(0.22 0.01 250);
+    --pmmf-paper: oklch(0.985 0.004 90);
+    --pmmf-line:  oklch(0.88 0.005 250);
+    --pmmf-fia:   #0a2f57;
+    --pmmf-stroke: var(--pmmf-red);
+
+    --background: oklch(0.96 0.006 90);
+    --foreground: var(--pmmf-ink);
+    --muted-foreground: oklch(0.45 0.01 250);
+
+    --shadow-paper: 0 30px 60px -20px oklch(0.15 0.02 0 / 0.25), 0 8px 20px -8px oklch(0.15 0.02 0 / 0.15);
+  }
+
+  * { box-sizing: border-box; border-color: var(--pmmf-line); }
+  html, body { margin: 0; padding: 0; }
+  html { font-family: "Cairo", "Tajawal", system-ui, sans-serif; }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    background-image: repeating-linear-gradient(45deg, oklch(0 0 0 / 0.015) 0 2px, transparent 2px 12px);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+
+  .toolbar {
+    max-width: 900px;
+    margin: 0 auto 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .toolbar .hint { font-size: 0.75rem; color: var(--muted-foreground); }
+  .print-btn {
+    background: var(--pmmf-black);
+    color: var(--pmmf-white);
+    font-size: 0.875rem;
+    font-weight: 700;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.375rem;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    transition: background-color 0.2s;
+  }
+  .print-btn:hover { background: var(--pmmf-red); }
+
+  .paper {
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    box-shadow: var(--shadow-paper);
+    overflow: hidden;
+  }
+
+  .flag-bar {
+    background: linear-gradient(to left,
+      var(--pmmf-black) 0 25%,
+      var(--pmmf-white) 25% 50%,
+      var(--pmmf-green) 50% 75%,
+      var(--pmmf-red) 75% 100%);
+  }
+  .flag-bar.h-2 { height: 0.5rem; }
+  .flag-bar.h-1\.5 { height: 0.375rem; }
+
+  .checkered-strip {
+    background-image:
+      linear-gradient(45deg, var(--pmmf-black) 25%, transparent 25%),
+      linear-gradient(-45deg, var(--pmmf-black) 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, var(--pmmf-black) 75%),
+      linear-gradient(-45deg, transparent 75%, var(--pmmf-black) 75%);
+    background-size: 14px 14px;
+    background-position: 0 0, 0 7px, 7px -7px, -7px 0;
+    background-color: var(--pmmf-white);
+    position: absolute;
+    top: 0; right: 0;
+    height: 1.5rem; width: 10rem;
+  }
+
+  header.header {
+    padding: 1.25rem 1.5rem 0.75rem;
+    border-bottom: 4px solid var(--pmmf-black);
+    position: relative;
+  }
+  .header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .logo-left { display: flex; align-items: center; gap: 1rem; flex: 1; }
+  .logo-right { display: flex; flex-direction: column; align-items: center; gap: 0.2rem; flex-shrink: 0; }
+  .fia-label { font-size: 10px; font-weight: 700; color: var(--pmmf-ink); letter-spacing: 0.05em; }
+
+  .pmmf-logo-img { height: 4.5rem; width: auto; object-fit: contain; }
+  .fia-logo-img { height: 4.5rem; width: auto; object-fit: contain; }
+
+  .title-block { margin-top: 0.6rem; text-align: center; }
+  .title-block h1 { font-weight: 700; font-size: 1.5rem; color: var(--pmmf-black); line-height: 1.3; margin: 0; }
+  .title-block h2 { font-size: 0.8125rem; font-weight: 600; color: var(--pmmf-red); letter-spacing: 0.02em; margin: 0.15rem 0 0; }
+
+  .title-band {
+    position: relative;
+    background-color: var(--pmmf-black);
+    border-top: 2px solid var(--pmmf-stroke);
+    border-bottom: 2px solid var(--pmmf-stroke);
+    color: var(--pmmf-white);
+    padding: 1rem 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .title-band .left { display: flex; align-items: center; gap: 0.75rem; }
+  .title-band .bar { width: 0.5rem; height: 2rem; background: var(--pmmf-stroke); display: inline-block; }
+  .title-band h3 { font-size: 1.125rem; font-weight: 700; margin: 0; }
+  .title-band .reg { font-size: 0.75rem; opacity: 0.8; font-weight: 700; }
+
+  .body-section { padding: 2rem 2.5rem; display: flex; flex-direction: column; gap: 2rem; }
+
+  .field-section.accent-black,
+  .field-section.accent-red,
+  .field-section.accent-green { --accent: var(--pmmf-black); }
+
+  .section-title { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+  .section-title .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2.25rem; height: 2.25rem;
+    border-radius: 0.375rem;
+    background: var(--accent, var(--pmmf-black)); color: var(--pmmf-white);
+    font-weight: 700; font-size: 0.875rem;
+    border: 2px solid var(--pmmf-stroke);
+  }
+  .section-title h4 { font-weight: 700; color: var(--pmmf-black); font-size: 1rem; margin: 0; }
+  .section-title .en { font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted-foreground); }
+  .section-title .line { flex: 1; height: 1px; background: var(--pmmf-line); }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1.5rem;
+    border: 2px solid var(--pmmf-stroke);
+    border-radius: 0.375rem;
+    overflow: hidden;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: minmax(140px, 180px) 1fr;
+    align-items: stretch;
+    border-bottom: 1px solid var(--pmmf-stroke);
+  }
+  .info-grid .row:nth-last-child(-n+2) { border-bottom: none; }
+  .row .label {
+    background-color: var(--accent, var(--pmmf-black));
+    color: var(--pmmf-white);
+    padding: 0.75rem 1rem; font-size: 0.875rem; font-weight: 700;
+    display: flex; align-items: center;
+    border-left: 2px solid var(--pmmf-stroke);
+  }
+  .row .value {
+    padding: 0.75rem 1rem; font-size: 0.875rem; color: var(--pmmf-ink);
+    background: white;
+    display: flex; align-items: center; min-height: 46px;
+  }
+  .row .value.empty { color: color-mix(in oklab, var(--muted-foreground) 40%, transparent); }
+
+  ul.declarations { list-style: none; margin: 0; padding: 0; border: 1px solid var(--pmmf-line); border-radius: 0.375rem; overflow: hidden; }
+  ul.declarations li {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.75rem 1rem; font-size: 0.875rem;
+    border-bottom: 1px solid var(--pmmf-line);
+    background: white;
+  }
+  ul.declarations li:last-child { border-bottom: none; }
+  ul.declarations li.odd { background: var(--pmmf-paper); }
+  ul.declarations .check {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.5rem; height: 1.5rem; border-radius: 999px;
+    background: var(--pmmf-green); color: var(--pmmf-white);
+    font-weight: 700; flex-shrink: 0;
+  }
+  ul.declarations .text { color: var(--pmmf-ink); flex: 1; }
+  ul.declarations .confirmed { font-size: 0.6875rem; font-weight: 700; color: var(--pmmf-green); }
+
+  .sig-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; padding-top: 1.5rem; }
+  .sig-box .sig-label { font-size: 0.875rem; font-weight: 700; color: var(--pmmf-black); margin-bottom: 0.5rem; }
+  .sig-box .sig-area {
+    height: 6rem;
+    border: 1px dashed var(--accent, var(--pmmf-black));
+    border-top: 4px solid var(--accent, var(--pmmf-black));
+    border-radius: 0.375rem;
+    background: color-mix(in oklab, var(--accent, var(--pmmf-black)) 6%, var(--pmmf-paper));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sig-box .sig-name { font-size: 0.9375rem; font-weight: 700; color: var(--pmmf-ink); }
+  .sig-box.accent-black { --accent: var(--pmmf-black); }
+  .sig-box.accent-red { --accent: var(--pmmf-red); }
+  .sig-box.accent-green { --accent: var(--pmmf-green); }
+
+  footer.form-footer { margin-top: 1rem; border-top: 2px solid var(--pmmf-black); }
+  .footer-content {
+    padding: 1rem 2.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 0.6875rem; color: var(--pmmf-ink);
+    background: var(--pmmf-paper);
+  }
+  .footer-content .fed-name { font-weight: 700; }
+  .footer-content .muted { color: var(--muted-foreground); }
+  .footer-content .right { text-align: left; color: var(--muted-foreground); }
+
+  @media print {
+    body { background: white !important; background-image: none !important; padding: 0 !important; }
+    .no-print { display: none !important; }
+    .paper { box-shadow: none !important; margin: 0 !important; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="toolbar no-print">
+    <div class="hint">PMMF · نموذج رسمي · اضغط طباعة للحصول على نسخة PDF</div>
+    <button class="print-btn" onclick="window.print()">طباعة / حفظ PDF</button>
+  </div>
+
+  <article class="paper">
+    <div class="flag-bar h-2"></div>
+
+    <header class="header">
+      <div class="checkered-strip"></div>
+      <div class="header-row">
+        <div class="logo-left">
+          <img src="pmsmf_logo.png" alt="PMMF — Palestinian Motorsport and Motorcycle Federation" class="pmmf-logo-img" />
+        </div>
+        <div class="logo-right">
+          <img src="fia.png" alt="FIA" class="fia-logo-img" />
+          <span class="fia-label">FIA MEMBER</span>
+        </div>
+      </div>
+
+      <div class="title-block">
+        <h1>الاتحاد الفلسطيني لرياضة السيارات والدراجات النارية</h1>
+        <h2 dir="ltr">Palestinian Motorsport &amp; Motorcycle Federation</h2>
+      </div>
+    </header>
+
+    <div class="title-band">
+      <div class="left">
+        <span class="bar"></span>
+        <h3 id="eventTitle">نموذج اشتراك — سباق الدرفت — الجولة الأولى لعام 2026</h3>
+      </div>
+      <div class="reg" dir="ltr" id="regNumber">REG #01</div>
+    </div>
+
+    <section class="body-section">
+
+      <!-- Driver -->
+      <div class="field-section accent-green">
+        <div class="section-title">
+          <span class="num">01</span>
+          <h4>بيانات المتسابق</h4>
+          <span class="en" dir="ltr">Driver Information</span>
+          <div class="line"></div>
+        </div>
+        <div class="info-grid">
+          <div class="row"><div class="label">الاسم الكامل</div><div class="value">احمد علي لدادوه</div></div>
+          <div class="row"><div class="label">رقم الهوية</div><div class="value">937851061</div></div>
+          <div class="row"><div class="label">تاريخ الميلاد</div><div class="value">1984-02-18</div></div>
+          <div class="row"><div class="label">رقم الجوال</div><div class="value">0597661704</div></div>
+          <div class="row"><div class="label">البريد الإلكتروني</div><div class="value">aladadweh1984@gmail.com</div></div>
+          <div class="row"><div class="label">المدينة</div><div class="value">Ramallah</div></div>
+          <div class="row"><div class="label">فئة المشاركة</div><div class="value">درفت</div></div>
+          <div class="row"><div class="label">سنوات الخبرة</div><div class="value">1</div></div>
+          <div class="row"><div class="label">فصيلة الدم</div><div class="value">A+</div></div>
+          <div class="row"><div class="label">جهة اتصال الطوارئ</div><div class="value">احمد يعقوب — 0597661704</div></div>
+        </div>
+      </div>
+
+      <!-- Assistant -->
+      <div class="field-section accent-green">
+        <div class="section-title">
+          <span class="num">02</span>
+          <h4>بيانات المساعد</h4>
+          <span class="en" dir="ltr">Co-Driver Information</span>
+          <div class="line"></div>
+        </div>
+        <div class="info-grid">
+          <div class="row"><div class="label">الاسم الكامل</div><div class="value">محمد علي يعقوب</div></div>
+          <div class="row"><div class="label">رقم الهوية</div><div class="value">1548795222</div></div>
+          <div class="row"><div class="label">تاريخ الميلاد</div><div class="value">1989-10-10</div></div>
+          <div class="row"><div class="label">العمر</div><div class="value">36</div></div>
+          <div class="row"><div class="label">رقم الجوال</div><div class="value">0597661704</div></div>
+          <div class="row"><div class="label">المدينة</div><div class="value">Ramallah</div></div>
+        </div>
+      </div>
+
+      <!-- Car -->
+      <div class="field-section accent-green">
+        <div class="section-title">
+          <span class="num">03</span>
+          <h4>بيانات السيارة</h4>
+          <span class="en" dir="ltr">Vehicle Information</span>
+          <div class="line"></div>
+        </div>
+        <div class="info-grid">
+          <div class="row"><div class="label">الشركة المصنعة</div><div class="value">VW</div></div>
+          <div class="row"><div class="label">الطراز (الموديل)</div><div class="value">POLO</div></div>
+          <div class="row"><div class="label">سعة المحرك</div><div class="value">1000 t</div></div>
+          <div class="row"><div class="label">سنة الصنع</div><div class="value">2019</div></div>
+          <div class="row"><div class="label">رقم اللوحة</div><div class="value">14563-H</div></div>
+          <div class="row"><div class="label">اللون</div><div class="value">اسود</div></div>
+          <div class="row"><div class="label">نظام الدفع</div><div class="value">أمامي</div></div>
+          <div class="row"><div class="label">قفص حماية</div><div class="value">نعم</div></div>
+          <div class="row"><div class="label">طفاية حريق</div><div class="value">نعم</div></div>
+          <div class="row"><div class="label">حزام خماسي</div><div class="value">نعم</div></div>
+        </div>
+      </div>
+
+      <!-- Declarations -->
+      <div>
+        <div class="section-title">
+          <span class="num">04</span>
+          <h4>الإقرارات</h4>
+          <span class="en" dir="ltr">Declarations</span>
+          <div class="line"></div>
+        </div>
+        <ul class="declarations">
+          <li><span class="check">✓</span><span class="text">إقرار المشاركة على المسؤولية الشخصية</span><span class="confirmed">تم التأكيد</span></li>
+          <li class="odd"><span class="check">✓</span><span class="text">الموافقة على شروط وأحكام السباق</span><span class="confirmed">تم التأكيد</span></li>
+        </ul>
+      </div>
+
+      <!-- Signature -->
+      <div class="sig-grid">
+        <div class="sig-box accent-black">
+          <div class="sig-label">توقيع المتسابق:</div>
+          <div class="sig-area"></div>
+        </div>
+        <div class="sig-box accent-red">
+          <div class="sig-label">مدير اللجنة الفنية:</div>
+          <div class="sig-area"><span class="sig-name">محمد عدوي</span></div>
+        </div>
+        <div class="sig-box accent-green">
+          <div class="sig-label">مدير السباق:</div>
+          <div class="sig-area"><span class="sig-name">حكم حامد</span></div>
+        </div>
+      </div>
+
+    </section>
+
+    <footer class="form-footer">
+      <div class="flag-bar h-1.5"></div>
+      <div class="footer-content">
+        <div>
+          <div class="fed-name">الاتحاد الفلسطيني لرياضة السيارات والدراجات النارية</div>
+          <div class="muted" dir="ltr">Ramallah — Palestine · info@pmmf.ps · www.pmmf.ps</div>
+        </div>
+        <div class="right">
+          <div>PMMF · 2026</div>
+          <div dir="ltr">FIA Affiliated Member</div>
+        </div>
+      </div>
+    </footer>
+  </article>
+
+</body>
+</html>
