@@ -197,6 +197,8 @@
      كاملة للتصميم - بديل عن محوّل Google HTML→Docs الذي يُسقط معظم خصائص CSS. عند فشل التحميل
      (لا إنترنت للمكتبة مثلًا) يسقط النظام تلقائيًا للتوليد الخادمي في Apps Script. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<!-- SheetJS: تصدير كشف المتسابقين من لوحة التحكم بصيغة Excel حقيقية (.xlsx) بعناوين مجمّعة -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap">
@@ -1049,6 +1051,101 @@ function openAdminGate(){
   });
 }
 
+// تعريف مشترك لأعمدة كشف لوحة التحكم - نفس ترتيب وتصنيف الجدول المعروض حرفيًا،
+// تستخدمه صادرات Excel وPDF معًا كي لا يختلف الكشفان عن الجدول أبدًا.
+const ADMIN_EXPORT_GROUPS = [
+  { title:'بيانات المتسابق', cols:[['#','raceNumber'],['الاسم','fullName'],['رقم الهوية','nationalId'],['المدينة','city'],['فصيلة الدم','bloodType']] },
+  { title:'بيانات المساعد', cols:[['الاسم','assistantFullName'],['رقم الهوية','assistantNationalId'],['العمر','assistantAge']] },
+  { title:'بيانات السيارة', cols:[['الشركة المصنعة','carMake'],['الطراز','carModel'],['سعة المحرك','engineCapacity'],['سنة الصنع','carYear'],['رقم اللوحة','carPlate'],['اللون','carColor'],['نظام الدفع','drivetrain'],['مقعد','hasSeat'],['قفص حماية','hasRollCage'],['طفاية حريق','hasFireExt'],['حزام خماسي','hasHarness'],['نقاط السحب','hasTowPoints']] }
+];
+
+// تصدير Excel حقيقي (.xlsx): صفّا عناوين - صف التصنيف بخلايا مدمجة فوق صف أسماء الأعمدة -
+// وورقة باتجاه يمين-لليسار، مع عمود إضافي أخير لرابط مجلد المستندات في Drive.
+function exportAdminExcel(entries){
+  if(typeof XLSX === 'undefined'){ alert('تعذّر تحميل مكتبة Excel، تأكد من اتصالك بالإنترنت وأعد تحميل الصفحة.'); return; }
+  const row1 = [], row2 = [], merges = [];
+  let c = 0;
+  ADMIN_EXPORT_GROUPS.forEach(g=>{
+    row1.push(g.title);
+    for(let i = 1; i < g.cols.length; i++) row1.push('');
+    if(g.cols.length > 1) merges.push({s:{r:0,c:c}, e:{r:0,c:c+g.cols.length-1}});
+    g.cols.forEach(col=> row2.push(col[0]));
+    c += g.cols.length;
+  });
+  row1.push('مجلد المستندات'); row2.push('');
+  merges.push({s:{r:0,c:c}, e:{r:1,c:c}});
+  const dataRows = entries.map(en=>{
+    const r = [];
+    ADMIN_EXPORT_GROUPS.forEach(g=>g.cols.forEach(col=>{
+      const v = en[col[1]];
+      r.push(v === null || v === undefined ? '' : v);
+    }));
+    r.push(en.folderUrl || '');
+    return r;
+  });
+  const ws = XLSX.utils.aoa_to_sheet([row1, row2].concat(dataRows));
+  ws['!merges'] = merges;
+  ws['!cols'] = row2.map((h,i)=>({wch: (i===1 || i===5) ? 24 : (i===row2.length-1 ? 40 : 12)}));
+  const wb = XLSX.utils.book_new();
+  wb.Workbook = { Views: [{ RTL: true }] };
+  XLSX.utils.book_append_sheet(wb, ws, 'المتسابقون');
+  XLSX.writeFile(wb, 'كشف_المتسابقين.xlsx');
+}
+
+// تصدير PDF أفقي (A4 Landscape) بنفس تصنيف الجدول: صف تجميع علوي + صف أسماء أعمدة،
+// بنفس آلية التوليد المتصفحية المعتمدة (تصفير التمرير + فحص أن الناتج ليس صفحة بيضاء).
+async function exportAdminPdf(entries, status){
+  if(typeof html2pdf === 'undefined'){ alert('تعذّر تحميل مكتبة PDF، تأكد من اتصالك بالإنترنت وأعد تحميل الصفحة.'); return; }
+  const cell = v => esc(v === null || v === undefined ? '' : String(v));
+  const groupRow = ADMIN_EXPORT_GROUPS.map(g=>
+    `<th colspan="${g.cols.length}" style="background:#0d0a0b;color:#fff;border:1px solid #c9000c;padding:5px 4px;font-size:9px;">${g.title}</th>`).join('');
+  const headRow = ADMIN_EXPORT_GROUPS.map(g=>g.cols.map(col=>
+    `<th style="background:#f6f3ec;border:1px solid #c9000c;padding:4px 3px;font-size:8px;white-space:nowrap;">${col[0]}</th>`).join('')).join('');
+  const bodyRows = entries.map((en,i)=>
+    `<tr style="page-break-inside:avoid;background:${i%2 ? '#fbfaf7' : '#ffffff'};">` +
+    ADMIN_EXPORT_GROUPS.map(g=>g.cols.map(col=>
+      `<td style="border:1px solid #d5d8db;padding:3px;font-size:8px;text-align:center;">${cell(en[col[1]])}</td>`).join('')).join('') +
+    '</tr>').join('');
+  const today = new Date().toLocaleDateString('en-GB');
+  const html =
+    `<div dir="rtl" style="width:1100px;background:#fff;font-family:'Segoe UI',Tahoma,Arial,sans-serif;color:#171b1f;padding:14px;">` +
+      `<div style="height:6px;background:linear-gradient(to left,#0d0a0b 0 25%,#fff 25% 50%,#00602a 50% 75%,#c9000c 75% 100%);margin-bottom:10px;"></div>` +
+      `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">` +
+        `<div style="font-size:14px;font-weight:700;">كشف المتسابقين — سباق الدرفت — الجولة الأولى لعام 2026</div>` +
+        `<div style="font-size:9px;color:#51565b;" dir="ltr">${today} · ${entries.length}/${status.cap} مشتركًا</div>` +
+      `</div>` +
+      `<table style="width:100%;border-collapse:collapse;" dir="rtl">` +
+        `<thead><tr>${groupRow}</tr><tr>${headRow}</tr></thead>` +
+        `<tbody>${bodyRows}</tbody>` +
+      `</table>` +
+      `<div style="margin-top:8px;font-size:8px;color:#51565b;">الاتحاد الفلسطيني لرياضة السيارات والدراجات النارية · PMMF · FIA Affiliated Member</div>` +
+    `</div>`;
+  const host = document.createElement('div');
+  host.style.cssText = 'position:absolute;left:-9999px;top:0;width:1100px;background:#ffffff;';
+  host.innerHTML = html;
+  document.body.appendChild(host);
+  const scroll = { x: window.scrollX || 0, y: window.scrollY || 0 };
+  window.scrollTo(0, 0);
+  try{
+    const opts = {
+      margin: 5,
+      image: { type: 'jpeg', quality: 0.92 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, scrollX: 0, scrollY: 0 },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
+      pagebreak: { mode: ['css', 'legacy'] }
+    };
+    const el = host.firstElementChild;
+    const canvas = await html2pdf().set(opts).from(el).toCanvas().get('canvas');
+    if(!canvasHasContent(canvas)){ alert('تعذّر توليد ملف الـPDF، حاول مجددًا.'); return; }
+    await html2pdf().set(opts).from(el).save('كشف_المتسابقين.pdf');
+  }catch(err){
+    alert('تعذّر توليد ملف الـPDF: ' + err.message);
+  }finally{
+    host.remove();
+    window.scrollTo(scroll.x, scroll.y);
+  }
+}
+
 function renderAdminPanel(res, pass){
   const content = document.getElementById('adminContent');
   const s = res.status;
@@ -1060,6 +1157,8 @@ function renderAdminPanel(res, pass){
       <button id="toggleCloseBtn" class="${isClosed?'ghost':'danger'}">${isClosed?'إعادة فتح التسجيل':'إغلاق التسجيل الآن'}</button>
       <button id="extendBtn" class="ghost">تمديد التسجيل (إعادة تشغيل العد التنازلي)</button>
       <button id="exportAllBtn" class="ghost">تصدير كشف كامل بجميع المتسابقين (CSV)</button>
+      <button id="exportExcelBtn">تصدير الجدول Excel</button>
+      <button id="exportPdfBtn">تصدير الجدول PDF</button>
     </div>
     <div style="overflow:auto;">
     <table class="admin-table">
@@ -1096,6 +1195,15 @@ function renderAdminPanel(res, pass){
     await api('extend', {pass});
     document.getElementById('adminOverlay').classList.remove('open');
     boot();
+  });
+
+  document.getElementById('exportExcelBtn').addEventListener('click', ()=> exportAdminExcel(res.entries));
+
+  document.getElementById('exportPdfBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('exportPdfBtn');
+    btn.disabled = true; btn.textContent = 'جارٍ توليد PDF...';
+    try{ await exportAdminPdf(res.entries, s); }
+    finally{ btn.disabled = false; btn.textContent = 'تصدير الجدول PDF'; }
   });
 
   document.getElementById('exportAllBtn').addEventListener('click', async ()=>{
