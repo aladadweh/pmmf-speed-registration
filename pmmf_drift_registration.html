@@ -840,27 +840,60 @@ function pdfDocumentHtml(entry, regNumber){
   </div>`;
 }
 
+// يفحص أن الكانفس المُصيَّر ليس صفحة بيضاء فارغة: يعاين عيّنة صفوف بكسلات موزعة؛ إن كانت
+// كلها بيضاء نعتبر التصيير فاشلًا فنعيد null ليتولى الباك إند التوليد الخادمي بدل إرسال PDF فارغ.
+function canvasHasContent(canvas){
+  try{
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    if(!w || !h) return false;
+    const rows = [0.05, 0.2, 0.4, 0.6, 0.8].map(f => Math.floor(h * f));
+    for(const y of rows){
+      const px = ctx.getImageData(0, y, w, 1).data;
+      for(let i = 0; i < px.length; i += 40){
+        if(px[i] < 245 || px[i+1] < 245 || px[i+2] < 245) return true;
+      }
+    }
+    return false;
+  }catch(e){ return true; } // تعذّر الفحص نفسه - لا نعطّل الإرسال بسببه
+}
+
 // يُصيّر القالب في عنصر مخفي خارج الشاشة ويحوّله إلى PDF (A4 عمودي) ويعيده data URL،
-// أو null عند أي فشل (المكتبة غير محمّلة، خطأ تصيير...) - عندها يتولى الباك إند التوليد الخادمي.
+// أو null عند أي فشل (المكتبة غير محمّلة، خطأ تصيير، ناتج فارغ...) - عندها يتولى الباك إند
+// التوليد الخادمي.
 async function generateRegistrationPdf(entry, regNumber){
   if(typeof html2pdf === 'undefined') return null;
   const host = document.createElement('div');
-  host.style.cssText = 'position:fixed;left:-99999px;top:0;width:794px;background:#ffffff;';
+  host.style.cssText = 'position:absolute;left:-9999px;top:0;width:794px;background:#ffffff;';
   host.innerHTML = pdfDocumentHtml(entry, regNumber);
   document.body.appendChild(host);
+  // html2canvas يُزيح اللقطة بمقدار تمرير الصفحة الحالي، وهو ما أنتج PDF فارغًا عند الإرسال
+  // من أسفل صفحة التسجيل الطويلة - نصفّر التمرير مؤقتًا ونثبّت scrollX/scrollY في الخيارات.
+  const scroll = { x: window.scrollX || 0, y: window.scrollY || 0 };
+  window.scrollTo(0, 0);
   try{
     if(document.fonts && document.fonts.ready){ try{ await document.fonts.ready; }catch(e){} }
-    return await html2pdf().set({
+    // انتظار اكتمال فك ترميز الشعارات المضمّنة قبل التصيير
+    await Promise.all(Array.from(host.querySelectorAll('img')).map(img =>
+      (img.decode ? img.decode() : Promise.resolve()).catch(()=>{})
+    ));
+    const opts = {
       margin: 0,
       image: { type: 'jpeg', quality: 0.92 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false, scrollX: 0, scrollY: 0 },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['css', 'legacy'] }
-    }).from(host.firstElementChild).output('datauristring');
+    };
+    const el = host.firstElementChild;
+    // تصيير أولي للتحقق أن الناتج ليس صفحة بيضاء قبل اعتماد النسخة المتصفحية
+    const canvas = await html2pdf().set(opts).from(el).toCanvas().get('canvas');
+    if(!canvasHasContent(canvas)) return null;
+    return await html2pdf().set(opts).from(el).output('datauristring');
   }catch(err){
     return null;
   }finally{
     host.remove();
+    window.scrollTo(scroll.x, scroll.y);
   }
 }
 
