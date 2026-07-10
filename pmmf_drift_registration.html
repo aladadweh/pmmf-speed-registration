@@ -1146,6 +1146,60 @@ async function exportAdminPdf(entries, status){
   }
 }
 
+// توليد نماذج الاشتراك لكل المسجّلين بالتصميم المتصفحي المطابق (نفس قالب pdfDocumentHtml
+// حرفيًا، بلا أي تعديل) ورفعها للباك إند ليحفظها في مجلد "الاشتراكات" في Drive مستبدلةً
+// الملفات القديمة بنفس الأسماء (#01 - الاسم.pdf ...). يعمل تسلسليًا مع مؤشر تقدم على الزر.
+async function regenerateSubscriptionsToDrive(pass, progressBtn){
+  const full = await api('exportAll', {pass});
+  if(full.error || !full.rows || full.rows.length < 2){
+    alert('تعذّر جلب بيانات المسجّلين: ' + (full.error || 'لا توجد تسجيلات'));
+    return;
+  }
+  const dateOnly = v => {
+    const s = String(v || '');
+    return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : s;
+  };
+  const asBool = v => String(v).trim() === 'نعم';
+  const rows = full.rows.slice(1); // أول صف = العناوين
+  let done = 0, failed = [];
+  let folderUrl = '';
+  for(const r of rows){
+    const raceNumber = r[1];
+    const entry = {
+      fullName: String(r[2]||''), nationalId: String(r[3]||''), dob: dateOnly(r[4]), phone: String(r[5]||''),
+      email: String(r[6]||''), city: String(r[7]||''), category: String(r[8]||''), experience: String(r[9]||''),
+      bloodType: String(r[10]||''), emergencyName: String(r[11]||''), emergencyPhone: String(r[12]||''),
+      assistant: {
+        fullName: String(r[13]||''), nationalId: String(r[14]||''), dob: dateOnly(r[15]),
+        age: String(r[16]||''), phone: String(r[17]||''), city: String(r[18]||'')
+      },
+      car: {
+        carMake: String(r[19]||''), carModel: String(r[20]||''), engineCapacity: String(r[21]||''),
+        carYear: String(r[22]||''), carPlate: String(r[23]||''), carColor: String(r[24]||''),
+        drivetrain: String(r[25]||''),
+        hasSeat: asBool(r[26]), hasRollCage: asBool(r[27]), hasFireExt: asBool(r[28]),
+        hasHarness: asBool(r[29]), hasTowPoints: asBool(r[30])
+      }
+    };
+    progressBtn.textContent = 'توليد ورفع ' + (done + 1) + '/' + rows.length + '...';
+    try{
+      const pdf = await generateRegistrationPdf(entry, raceNumber);
+      if(!pdf) throw new Error('فشل التصيير في المتصفح');
+      const fileName = '#' + String(raceNumber).padStart(2, '0') + ' - ' + entry.fullName + '.pdf';
+      const saved = await api('storeSubscriptionPdf', {pass, fileName, pdfFile: pdf});
+      if(saved.error) throw new Error(saved.error);
+      folderUrl = saved.folderUrl || folderUrl;
+      done++;
+    }catch(err){
+      failed.push('#' + raceNumber + ' ' + entry.fullName + ' (' + err.message + ')');
+    }
+  }
+  let msg = 'اكتمل: تم توليد ورفع ' + done + ' من ' + rows.length + ' نموذجًا إلى مجلد "الاشتراكات" في Drive.';
+  if(failed.length) msg += '\n\nفشل:\n' + failed.join('\n') + '\n\nأعد المحاولة - الناجحة سابقًا ستُستبدل بلا تكرار.';
+  if(folderUrl) msg += '\n\nرابط المجلد:\n' + folderUrl;
+  alert(msg);
+}
+
 function renderAdminPanel(res, pass){
   const content = document.getElementById('adminContent');
   const s = res.status;
@@ -1159,6 +1213,7 @@ function renderAdminPanel(res, pass){
       <button id="exportAllBtn" class="ghost">تصدير كشف كامل بجميع المتسابقين (CSV)</button>
       <button id="exportExcelBtn">تصدير الجدول Excel</button>
       <button id="exportPdfBtn">تصدير الجدول PDF</button>
+      <button id="regenSubsBtn">توليد نماذج الاشتراكات بالتصميم ورفعها إلى Drive</button>
     </div>
     <div style="overflow:auto;">
     <table class="admin-table">
@@ -1198,6 +1253,14 @@ function renderAdminPanel(res, pass){
   });
 
   document.getElementById('exportExcelBtn').addEventListener('click', ()=> exportAdminExcel(res.entries));
+
+  document.getElementById('regenSubsBtn').addEventListener('click', async ()=>{
+    const btn = document.getElementById('regenSubsBtn');
+    if(!confirm('سيتم توليد نموذج PDF بالتصميم المعتمد لكل مشترك (' + res.entries.length + ' مشتركًا) ورفعها إلى مجلد "الاشتراكات" في Drive مع استبدال الملفات القديمة.\nقد يستغرق ذلك بضع دقائق - أبقِ هذه الصفحة مفتوحة. متابعة؟')) return;
+    btn.disabled = true;
+    try{ await regenerateSubscriptionsToDrive(pass, btn); }
+    finally{ btn.disabled = false; btn.textContent = 'توليد نماذج الاشتراكات بالتصميم ورفعها إلى Drive'; }
+  });
 
   document.getElementById('exportPdfBtn').addEventListener('click', async ()=>{
     const btn = document.getElementById('exportPdfBtn');
