@@ -750,6 +750,7 @@ function pdfDocumentHtml(entry, regNumber){
   const C = PDF_COLORS;
   const a = entry.assistant || {};
   const car = entry.car || {};
+  const photoSrc = entry.photoDataUrl || (entry.files && entry.files.photo_5x5 && entry.files.photo_5x5.dataUrl) || '';
   const yn = v => v ? 'نعم' : 'لا';
   const row = (label, value) =>
     `<div class="pdf-row"><div class="pdf-label">${esc(label)}</div><div class="pdf-value">${esc(String(value || '—'))}</div></div>`;
@@ -792,6 +793,9 @@ function pdfDocumentHtml(entry, regNumber){
       #pdfPrintRoot .pdf-sec-title h4{font-weight:700;color:${C.black};font-size:16px;}
       #pdfPrintRoot .pdf-en{font-size:11px;text-transform:uppercase;color:${C.muted};font-weight:700;white-space:nowrap;}
       #pdfPrintRoot .pdf-line{flex:1;height:1px;background:${C.line};}
+      #pdfPrintRoot .pdf-driver-row{display:flex;gap:16px;align-items:flex-start;}
+      #pdfPrintRoot .pdf-photo-box{width:96px;height:120px;flex-shrink:0;border:2px solid ${C.red};border-radius:6px;overflow:hidden;background:${C.paper};}
+      #pdfPrintRoot .pdf-photo-box img{width:100%;height:100%;object-fit:cover;display:block;}
       #pdfPrintRoot .pdf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;border:2px solid ${C.red};border-radius:6px;overflow:hidden;}
       #pdfPrintRoot .pdf-row{display:grid;grid-template-columns:150px 1fr;align-items:stretch;border-bottom:1px solid ${C.red};}
       #pdfPrintRoot .pdf-grid .pdf-row:nth-last-child(-n+2){border-bottom:none;}
@@ -839,13 +843,24 @@ function pdfDocumentHtml(entry, regNumber){
     </div>
 
     <div class="pdf-body">
-      ${section('01', 'بيانات المتسابق', 'Driver Information',
-        row('الاسم الكامل', entry.fullName) + row('رقم الهوية', entry.nationalId) +
-        row('تاريخ الميلاد', entry.dob) + row('رقم الجوال', entry.phone) +
-        row('البريد الإلكتروني', entry.email) + row('المدينة', entry.city) +
-        row('فئة المشاركة', entry.category) + row('مستوى الخبرة', entry.experience) +
-        row('فصيلة الدم', entry.bloodType) + row('جهة اتصال الطوارئ', entry.emergencyName + ' — ' + entry.emergencyPhone)
-      )}
+      <div class="pdf-section">
+        <div class="pdf-sec-title">
+          <span class="pdf-num">01</span>
+          <h4>بيانات المتسابق</h4>
+          <span class="pdf-en" dir="ltr">Driver Information</span>
+          <div class="pdf-line"></div>
+        </div>
+        <div class="pdf-driver-row">
+          <div class="pdf-photo-box">${photoSrc ? `<img src="${photoSrc}" alt="">` : ''}</div>
+          <div class="pdf-grid" style="flex:1;">
+            ${row('الاسم الكامل', entry.fullName) + row('رقم الهوية', entry.nationalId) +
+              row('تاريخ الميلاد', entry.dob) + row('رقم الجوال', entry.phone) +
+              row('البريد الإلكتروني', entry.email) + row('المدينة', entry.city) +
+              row('فئة المشاركة', entry.category) + row('مستوى الخبرة', entry.experience) +
+              row('فصيلة الدم', entry.bloodType) + row('جهة اتصال الطوارئ', entry.emergencyName + ' — ' + entry.emergencyPhone)}
+          </div>
+        </div>
+      </div>
       ${section('02', 'بيانات المساعد', 'Co-Driver Information',
         row('الاسم الكامل', a.fullName) + row('رقم الهوية', a.nationalId) +
         row('تاريخ الميلاد', a.dob) + row('العمر', a.age) +
@@ -1351,6 +1366,8 @@ async function regenerateSubscriptionsToDrive(pass, progressBtn){
   };
   const asBool = v => String(v).trim() === 'نعم';
   const rows = full.rows.slice(1); // أول صف = العناوين
+  const photosRes = await api('photos', {pass});
+  const photos = photosRes.photos || {};
   let done = 0, failed = [];
   let folderUrl = '';
   for(const r of rows){
@@ -1359,6 +1376,7 @@ async function regenerateSubscriptionsToDrive(pass, progressBtn){
       fullName: String(r[2]||''), nationalId: String(r[3]||''), dob: dateOnly(r[4]), phone: String(r[5]||''),
       email: String(r[6]||''), city: String(r[7]||''), category: String(r[8]||''), experience: String(r[9]||''),
       bloodType: String(r[10]||''), emergencyName: String(r[11]||''), emergencyPhone: String(r[12]||''),
+      photoDataUrl: photos[raceNumber] || '',
       assistant: {
         fullName: String(r[13]||''), nationalId: String(r[14]||''), dob: dateOnly(r[15]),
         age: String(r[16]||''), phone: String(r[17]||''), city: String(r[18]||'')
