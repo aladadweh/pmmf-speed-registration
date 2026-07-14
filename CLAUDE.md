@@ -97,7 +97,12 @@ calls must stay in sync.
 - Registrant count/cap/closed state (`getStatus()`) is derived live from `sheet.getLastRow()`,
   not stored separately — so deleting a row automatically frees up a seat, no extra bookkeeping.
 - `CAP` and `WINDOW_DAYS` constants gate registration (max participants / days since the sheet's
-  `Meta` tab `OpenedAt` timestamp).
+  `Meta` tab `OpenedAt` timestamp). `OpenedAt` also gates the *start* of registration: if it's in
+  the future, `getStatus()` reports `notYetOpen: true` (frontend shows "opens on `Meta` sequence
+  `OpenedAt`" instead of the generic closed reason). A brand-new `Meta` sheet seeds `OpenedAt` from
+  `SCHEDULED_OPEN_AT` instead of "now" — set that constant when scheduling a future registration
+  window before deploying. The admin panel's "تمديد التسجيل" button (`handleExtend`) resets
+  `OpenedAt` to the current moment and un-closes, for ad-hoc reopening/extension.
 - Sheet columns are positional (`getRange(2, col, ...)` / array indices in `handleAdmin`) — if you
   add/reorder a field in `getSheet()`'s header row or `handleRegister()`'s `appendRow()` call, you
   must update both together, plus any hardcoded column indices in `handleAdmin()`.

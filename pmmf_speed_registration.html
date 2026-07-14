@@ -237,7 +237,7 @@ async function api(action, extra){
 
 // ---------------- rendering shells ----------------
 function heroBlock(){
-  const s = state.status || {count:0, cap:60, daysLeft:10, closed:false};
+  const s = state.status || {count:0, cap:70, daysLeft:3, closed:false, notYetOpen:false};
   const remaining = Math.max(0, s.cap - s.count);
   return `
   <div class="hero">
@@ -251,7 +251,9 @@ function heroBlock(){
       <div class="hero-sub">الاتحاد الفلسطيني لرياضة السيارات والدراجات النارية</div>
       <div class="hero-meta">
         <div class="meta-pill ${remaining<=10?'warn':''}">المقاعد المتبقية <b>${remaining}</b> / ${s.cap}</div>
-        <div class="meta-pill ${s.daysLeft<=3?'warn':''}">أيام متبقية للتسجيل <b>${s.daysLeft}</b></div>
+        ${s.notYetOpen
+          ? `<div class="meta-pill">يبدأ التسجيل بتاريخ <b>${formatDate(s.opensAt)}</b></div>`
+          : `<div class="meta-pill ${s.daysLeft<=3?'warn':''}">أيام متبقية للتسجيل <b>${s.daysLeft}</b></div>`}
       </div>
     </div>
   </div>
@@ -291,7 +293,8 @@ function stepBar(){
 
 function closedScreen(){
   const s = state.status;
-  const reason = s.count>=s.cap ? `تم الوصول للعدد الأقصى من المشاركين (${s.cap} متسابقًا).` :
+  const reason = s.notYetOpen ? `لم يبدأ استقبال طلبات الاشتراك بعد — سيُفتح التسجيل بتاريخ ${formatDate(s.opensAt)}.` :
+                 s.count>=s.cap ? `تم الوصول للعدد الأقصى من المشاركين (${s.cap} متسابقًا).` :
                  (s.daysLeft<=0 ? "انتهت المدة المخصصة لاستقبال طلبات الاشتراك." :
                  "تم إغلاق باب التسجيل من قبل إدارة الاتحاد.");
   return `${heroBlock()}
@@ -521,6 +524,12 @@ function fieldError(id, show){
   if(el) el.classList.toggle('invalid', show);
 }
 function val(id){ return document.getElementById(id).value.trim(); }
+
+function formatDate(isoStr){
+  const d = new Date(isoStr);
+  if(isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('ar-EG', {day:'numeric', month:'long', year:'numeric'});
+}
 
 function calcAge(dobStr){
   if(!dobStr) return NaN;
@@ -1411,10 +1420,10 @@ async function regenerateSubscriptionsToDrive(pass, progressBtn){
 function renderAdminPanel(res, pass){
   const content = document.getElementById('adminContent');
   const s = res.status;
-  const isClosed = s.closed && s.count < s.cap && s.daysLeft > 0; // مغلق يدويًا
+  const isClosed = s.closed && s.count < s.cap && s.daysLeft > 0 && !s.notYetOpen; // مغلق يدويًا
   content.innerHTML = `
     <h3>لوحة تحكم الاتحاد</h3>
-    <p>عدد المسجلين: <b>${s.count}</b> / ${s.cap} — أيام متبقية: <b>${s.daysLeft}</b></p>
+    <p>عدد المسجلين: <b>${s.count}</b> / ${s.cap} — أيام متبقية: <b>${s.daysLeft}</b>${s.notYetOpen ? ' — لم يبدأ التسجيل بعد (يبدأ بتاريخ ' + formatDate(s.opensAt) + ')' : ''}</p>
     <div class="admin-actions">
       <button id="toggleCloseBtn" class="${isClosed?'ghost':'danger'}">${isClosed?'إعادة فتح التسجيل':'إغلاق التسجيل الآن'}</button>
       <button id="extendBtn" class="ghost">تمديد التسجيل (إعادة تشغيل العد التنازلي)</button>
