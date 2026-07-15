@@ -802,14 +802,11 @@ function pdfDocumentHtml(entry, regNumber){
       #pdfPrintRoot .pdf-sec-title h4{font-weight:700;color:${C.black};font-size:16px;}
       #pdfPrintRoot .pdf-en{font-size:11px;text-transform:uppercase;color:${C.muted};font-weight:700;white-space:nowrap;}
       #pdfPrintRoot .pdf-line{flex:1;height:1px;background:${C.line};}
-      #pdfPrintRoot .pdf-driver-row{display:flex;gap:16px;align-items:flex-start;}
-      #pdfPrintRoot .pdf-photo-box{width:96px;height:120px;flex-shrink:0;border:2px solid ${C.red};border-radius:6px;overflow:hidden;background:${C.paper};}
-      #pdfPrintRoot .pdf-photo-box img{width:100%;height:100%;object-fit:cover;display:block;}
-      #pdfPrintRoot .pdf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;border:2px solid ${C.red};border-radius:6px;overflow:hidden;}
-      #pdfPrintRoot .pdf-driver-grid{display:grid;grid-template-columns:1fr;border:2px solid ${C.red};border-radius:6px;overflow:hidden;}
+      #pdfPrintRoot .pdf-photo-corner{float:left;width:96px;height:120px;border:2px solid ${C.red};border-radius:6px;overflow:hidden;background:${C.paper};margin:0 0 12px;}
+      #pdfPrintRoot .pdf-photo-corner img{width:100%;height:100%;object-fit:cover;display:block;}
+      #pdfPrintRoot .pdf-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px;border:2px solid ${C.red};border-radius:6px;overflow:hidden;clear:both;}
       #pdfPrintRoot .pdf-row{display:grid;grid-template-columns:150px 1fr;align-items:stretch;border-bottom:1px solid ${C.red};}
       #pdfPrintRoot .pdf-grid .pdf-row:nth-last-child(-n+2){border-bottom:none;}
-      #pdfPrintRoot .pdf-driver-grid .pdf-row:last-child{border-bottom:none;}
       #pdfPrintRoot .pdf-label{background:${C.black};color:#ffffff;padding:12px 16px;font-size:14px;font-weight:700;display:flex;align-items:center;border-left:2px solid ${C.red};flex-shrink:0;}
       #pdfPrintRoot .pdf-value{padding:12px 16px;font-size:14px;color:${C.ink};background:#ffffff;display:flex;align-items:center;min-height:46px;overflow-wrap:anywhere;}
       #pdfPrintRoot .pdf-decls{list-style:none;border:1px solid ${C.line};border-radius:6px;overflow:hidden;}
@@ -861,15 +858,13 @@ function pdfDocumentHtml(entry, regNumber){
           <span class="pdf-en" dir="ltr">Driver Information</span>
           <div class="pdf-line"></div>
         </div>
-        <div class="pdf-driver-row">
-          <div class="pdf-photo-box">${photoSrc ? `<img src="${photoSrc}" alt="">` : ''}</div>
-          <div class="pdf-driver-grid" style="flex:1;">
-            ${row('الاسم الكامل', entry.fullName) + row('رقم الهوية', entry.nationalId) +
-              row('تاريخ الميلاد', entry.dob) + row('رقم الجوال', entry.phone) +
-              row('البريد الإلكتروني', entry.email) + row('المدينة', entry.city) +
-              row('فئة المشاركة', entry.category) + row('مستوى الخبرة', entry.experience) +
-              row('فصيلة الدم', entry.bloodType) + row('جهة اتصال الطوارئ', entry.emergencyName + ' — ' + entry.emergencyPhone)}
-          </div>
+        <div class="pdf-photo-corner">${photoSrc ? `<img src="${photoSrc}" alt="">` : ''}</div>
+        <div class="pdf-grid">
+          ${row('الاسم الكامل', entry.fullName) + row('رقم الهوية', entry.nationalId) +
+            row('تاريخ الميلاد', entry.dob) + row('رقم الجوال', entry.phone) +
+            row('البريد الإلكتروني', entry.email) + row('المدينة', entry.city) +
+            row('فئة المشاركة', entry.category) + row('مستوى الخبرة', entry.experience) +
+            row('فصيلة الدم', entry.bloodType) + row('جهة اتصال الطوارئ', entry.emergencyName + ' — ' + entry.emergencyPhone)}
         </div>
       </div>
       ${section('02', 'بيانات المساعد', 'Co-Driver Information',
