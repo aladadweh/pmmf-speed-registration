@@ -465,7 +465,7 @@ function wizardScreen(){
   ${footerBlock()}`;
 }
 
-function successScreen(entry, raceNumber){
+function successScreen(entry, raceNumber, folderUrl){
   return `${heroBlock()}
   <div class="success-wrap">
     <div class="success-badge">✓</div>
@@ -473,8 +473,22 @@ function successScreen(entry, raceNumber){
     <p style="color:var(--muted);font-size:14px;">${esc(entry.fullName)} — سيتم التواصل معك للتأكيد النهائي</p>
     <div class="race-number">#${String(raceNumber).padStart(2,'0')}</div>
     <div style="font-size:13px;color:var(--muted);">رقم ترتيبك في قائمة المشاركين</div>
-    <div><button class="btn-secondary" id="downloadAgain">تنزيل نسخة الوثائق</button>${state.generatedPdf ? ' <button class="btn-secondary" id="downloadPdf">تحميل نموذج التسجيل PDF</button>' : ''}</div>
+    <div><button class="btn-secondary" id="downloadAgain">تنزيل نسخة الوثائق</button>${state.generatedPdf ? ' <button class="btn-secondary" id="downloadPdf">تحميل نموذج التسجيل PDF</button>' : ''}${folderUrl ? ' <button class="btn-secondary" id="sendWhatsapp">إرسال التأكيد عبر واتساب</button>' : ''}</div>
   </div>${footerBlock()}`;
+}
+
+// يحوّل رقم محلي (05XXXXXXXX) إلى صيغة دولية بلا فواصل لاستخدامه في رابط wa.me
+function toWhatsAppPhone(phone){
+  const digitsOnly = String(phone || '').replace(/\D/g,'');
+  return digitsOnly.replace(/^0/, '970');
+}
+
+function sendWhatsAppConfirmation(entry, raceNumber, folderUrl){
+  const text = `مرحبًا ${entry.fullName}! تم استلام طلب اشتراكك في سباق السرعة بنجاح ✅\n` +
+    `رقم تسجيلك: #${String(raceNumber).padStart(2,'0')}\n\n` +
+    `يمكنك الاطلاع على نموذج طلبك ووثائقك من هنا:\n${folderUrl}\n\n` +
+    `سيتواصل معك الاتحاد الفلسطيني لرياضة السيارات والدراجات النارية للتأكيد النهائي.`;
+  window.open('https://wa.me/' + toWhatsAppPhone(entry.phone) + '?text=' + encodeURIComponent(text), '_blank');
 }
 
 // ---------------- boot ----------------
@@ -1059,10 +1073,11 @@ async function onSubmit(){
   }
 
   await buildAndDownloadZip(entry, result.raceNumber);
-  app.innerHTML = successScreen(entry, result.raceNumber);
+  app.innerHTML = successScreen(entry, result.raceNumber, result.folderUrl);
   wireFooter();
   document.getElementById('downloadAgain')?.addEventListener('click', ()=> buildAndDownloadZip(entry, result.raceNumber));
   document.getElementById('downloadPdf')?.addEventListener('click', ()=> downloadGeneratedPdf(entry));
+  document.getElementById('sendWhatsapp')?.addEventListener('click', ()=> sendWhatsAppConfirmation(entry, result.raceNumber, result.folderUrl));
 }
 
 async function buildAndDownloadZip(entry, raceNumber){
