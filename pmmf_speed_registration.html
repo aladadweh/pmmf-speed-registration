@@ -761,6 +761,11 @@ function pdfDocumentHtml(entry, regNumber){
   const car = entry.car || {};
   const photoSrc = entry.photoDataUrl || (entry.files && entry.files.photo_5x5 && entry.files.photo_5x5.dataUrl) || '';
   const yn = v => v ? 'نعم' : 'لا';
+  // الاسم الأول واسم العائلة فقط (بدون اسم الأب/الجد) لخانة توقيع المتسابق
+  const firstLastName = (()=>{
+    const parts = String(entry.fullName || '').trim().split(/\s+/).filter(Boolean);
+    return parts.length > 1 ? parts[0] + ' ' + parts[parts.length - 1] : parts.join(' ');
+  })();
   const row = (label, value) =>
     `<div class="pdf-row"><div class="pdf-label">${esc(label)}</div><div class="pdf-value">${esc(String(value || '—'))}</div></div>`;
   const section = (num, arTitle, enTag, rowsHtml) => `
@@ -897,7 +902,7 @@ function pdfDocumentHtml(entry, regNumber){
       <div class="pdf-sigs">
         <div class="pdf-sig-black">
           <div class="pdf-sig-label">توقيع المتسابق:</div>
-          <div class="pdf-sig-area"></div>
+          <div class="pdf-sig-area"><span class="pdf-sig-name">${esc(firstLastName)}</span></div>
         </div>
         <div class="pdf-sig-red">
           <div class="pdf-sig-label">مدير اللجنة الفنية:</div>
