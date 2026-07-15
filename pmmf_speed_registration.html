@@ -49,6 +49,19 @@
   .meta-pill.warn{border-color:var(--red); background:rgba(206,17,38,0.12);}
   .meta-pill.warn b{color:var(--red);}
 
+  .countdown{margin-top:12px; background:rgba(255,255,255,0.08); border:1px solid var(--line); border-radius:2px;
+    padding:10px 16px; display:inline-flex; align-items:center; gap:14px; flex-wrap:wrap;}
+  .countdown.urgent{border-color:var(--red); background:rgba(206,17,38,0.12);}
+  .countdown-label{font-size:12px; font-weight:700; color:var(--sand); white-space:nowrap;}
+  .countdown-digits{display:flex; align-items:flex-start; gap:6px;}
+  .cd-box{display:flex; flex-direction:column; align-items:center; min-width:34px;}
+  .cd-num{font-family:'Courier New',monospace; font-size:22px; font-weight:800; color:var(--yellow); line-height:1; letter-spacing:1px;}
+  .countdown.urgent .cd-num{color:var(--red);}
+  .cd-unit{font-size:9px; color:var(--muted); margin-top:3px;}
+  .cd-sep{font-size:18px; font-weight:800; color:var(--yellow); opacity:.55; margin-top:1px;}
+  .countdown.urgent .cd-sep{color:var(--red);}
+  @media (max-width:560px){ .cd-num{font-size:18px;} .cd-box{min-width:28px;} .countdown{gap:10px; padding:8px 12px;} }
+
   .shell{max-width:720px; margin:0 auto; padding:0 18px 80px;}
 
   .steps{display:flex; justify-content:space-between; margin:-1px auto 0; max-width:720px; background:var(--ink);}
@@ -236,9 +249,31 @@ async function api(action, extra){
 }
 
 // ---------------- rendering shells ----------------
+function countdownWidget(targetIso, mode, label){
+  return `
+  <div class="countdown" id="countdownWidget" data-target="${esc(targetIso)}" data-mode="${mode}">
+    <div class="countdown-label">${esc(label)}</div>
+    <div class="countdown-digits" dir="ltr">
+      <div class="cd-box"><span class="cd-num" id="cdDays">00</span><span class="cd-unit">يوم</span></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-box"><span class="cd-num" id="cdHours">00</span><span class="cd-unit">ساعة</span></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-box"><span class="cd-num" id="cdMins">00</span><span class="cd-unit">دقيقة</span></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-box"><span class="cd-num" id="cdSecs">00</span><span class="cd-unit">ثانية</span></div>
+    </div>
+  </div>`;
+}
+
 function heroBlock(){
   const s = state.status || {count:0, cap:70, daysLeft:3, closed:false, notYetOpen:false};
   const remaining = Math.max(0, s.cap - s.count);
+  let countdownHtml = '';
+  if(s.notYetOpen && s.opensAt){
+    countdownHtml = countdownWidget(s.opensAt, 'open', 'العد التنازلي لفتح التسجيل');
+  }else if(!s.closed && s.closesAt){
+    countdownHtml = countdownWidget(s.closesAt, 'close', 'العد التنازلي لإغلاق التسجيل');
+  }
   return `
   <div class="hero">
     <div class="hero-top">
@@ -251,10 +286,8 @@ function heroBlock(){
       <div class="hero-sub">الاتحاد الفلسطيني لرياضة السيارات والدراجات النارية</div>
       <div class="hero-meta">
         <div class="meta-pill ${remaining<=10?'warn':''}">المقاعد المتبقية <b>${remaining}</b> / ${s.cap}</div>
-        ${s.notYetOpen
-          ? `<div class="meta-pill">يبدأ التسجيل بتاريخ <b>${formatDate(s.opensAt)}</b></div>`
-          : `<div class="meta-pill ${s.daysLeft<=3?'warn':''}">أيام متبقية للتسجيل <b>${s.daysLeft}</b></div>`}
       </div>
+      ${countdownHtml}
     </div>
   </div>
   <div class="checker"></div>`;
@@ -498,9 +531,36 @@ async function boot(){
   goStep(1);
 }
 
+let countdownTimer = null;
+function wireCountdown(){
+  if(countdownTimer){ clearInterval(countdownTimer); countdownTimer = null; }
+  const el = document.getElementById('countdownWidget');
+  if(!el) return;
+  const target = new Date(el.dataset.target).getTime();
+  if(isNaN(target)) return;
+  const setDigit = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = String(v).padStart(2,'0'); };
+  const tick = ()=>{
+    const diff = target - Date.now();
+    if(diff <= 0){
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+      boot();
+      return;
+    }
+    setDigit('cdDays', Math.floor(diff / 86400000));
+    setDigit('cdHours', Math.floor((diff % 86400000) / 3600000));
+    setDigit('cdMins', Math.floor((diff % 3600000) / 60000));
+    setDigit('cdSecs', Math.floor((diff % 60000) / 1000));
+    el.classList.toggle('urgent', diff <= 60*60*1000);
+  };
+  tick();
+  countdownTimer = setInterval(tick, 1000);
+}
+
 function wireFooter(){
   const b = document.getElementById('openAdmin');
   if(b) b.addEventListener('click', openAdminGate);
+  wireCountdown();
 }
 
 function goStep(n){
