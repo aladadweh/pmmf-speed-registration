@@ -7,11 +7,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 A single-page Arabic (RTL) registration form for a speed-racing event ("SPEED") run by the
 Palestinian Motorsport and Motorcycle Federation (PMMF), plus its Google Apps Script backend.
 There is no build step, no package manager, and no framework — it's one big self-contained HTML
-file with inline `<style>` and `<script>`, backed by a Google Sheet. The file and repo names still
-say "drift" — that's a historical artifact, not a description of the current event.
+file with inline `<style>` and `<script>`, backed by a Google Sheet.
 
-Live site: https://aladadweh.github.io/pmmf-drift-registration/ (GitHub Pages, repo
-`aladadweh/pmmf-drift-registration`, branch `master`).
+This started as a fork of a drift-racing registration form (`aladadweh/pmmf-drift-registration`)
+that's now a fully separate, independent product: its own repo, its own Google Sheet, its own Apps
+Script deployment, its own Drive folders (`PMMF_SPEED_Registrations` / `الاشتراكات_سبيد`). No data
+or deployment is shared with the drift form — do not point `CONFIG.API_URL` back at the drift
+deployment.
+
+Live site: https://aladadweh.github.io/pmmf-speed-registration/ (GitHub Pages, repo
+`aladadweh/pmmf-speed-registration`, branch `master`).
 
 ## Files
 
@@ -130,7 +135,7 @@ When changing one — e.g. adding a field, changing `CAP`/`WINDOW_DAYS`, adding 
 ## Deploying
 
 - **Frontend**: push to `master` — GitHub Pages rebuilds automatically. Check build status with
-  `gh api repos/aladadweh/pmmf-drift-registration/pages/builds/latest -q .status`.
+  `gh api repos/aladadweh/pmmf-speed-registration/pages/builds/latest -q .status`.
 - **Backend**: `pmmf_backend_apps_script.gs` is gitignored and has no automated deploy. After
   editing it, changes must be manually copy-pasted into the live Apps Script project (via the
   Apps Script web editor) and redeployed as a **new version of the existing deployment** (Deploy →
