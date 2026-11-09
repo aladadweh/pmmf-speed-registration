@@ -11,7 +11,11 @@ file with inline `<style>` and `<script>`, backed by a Google Sheet.
 
 This started as a fork of a drift-racing registration form (`aladadweh/pmmf-drift-registration`)
 that's now a fully separate, independent product: its own repo, its own Google Sheet, its own Apps
-Script deployment, its own Drive folders (`PMMF_SPEED_Registrations` / `الاشتراكات_سبيد`). No data
+Script deployment, its own Drive folders. Each round is isolated: `SPREADSHEET_NAME` /
+`ROOT_FOLDER_NAME` in the `.gs` (currently `سبيد_جولة 2` / `سبيد-2`) name a standalone spreadsheet
+(found or created by `getSpreadsheet()`, not the script's bound sheet) and the Drive folder that
+holds it plus all registrant folders, `نماذج الاشتراك`, and `الاشتراكات_سبيد`. New round → change
+both constants and run `setupRound()` once from the editor. No data
 or deployment is shared with the drift form — do not point `CONFIG.API_URL` back at the drift
 deployment.
 
